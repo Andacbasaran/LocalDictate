@@ -97,6 +97,7 @@ class WhisperTranscriber:
         self,
         audio: np.ndarray,
         language: str = "auto",
+        initial_prompt: str | None = None,
     ) -> TranscriptionResult:
         """Transcribe a 16 kHz mono float32 audio array."""
         if audio.size == 0:
@@ -117,6 +118,7 @@ class WhisperTranscriber:
             segments, info = self._model.transcribe(
                 audio,
                 language=lang_arg,
+                initial_prompt=initial_prompt or None,
                 beam_size=self.beam_size,
                 vad_filter=self.vad_filter,
                 vad_parameters={"min_silence_duration_ms": 400},

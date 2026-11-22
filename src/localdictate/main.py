@@ -9,6 +9,8 @@ from PyQt6.QtWidgets import QApplication, QSystemTrayIcon
 
 from .config import load_config
 from .controller import DictationController
+from .history import HistoryStore
+from .ui.history_dialog import HistoryDialog
 from .ui.overlay import FloatingOverlay
 from .ui.settings_dialog import SettingsDialog
 from .ui.tray import TrayManager
@@ -31,7 +33,8 @@ def main() -> int:
     app.setQuitOnLastWindowClosed(False)
 
     config = load_config()
-    controller = DictationController(config=config)
+    history_store = HistoryStore()
+    controller = DictationController(config=config, history=history_store)
     overlay = FloatingOverlay(position=config.overlay_position)
     tray = TrayManager(active_hotkey=config.active_hotkey)
 
@@ -39,8 +42,10 @@ def main() -> int:
     controller.state_changed.connect(overlay.on_state_changed)
     controller.state_changed.connect(tray.on_state_changed)
     controller.audio_level.connect(overlay.on_audio_level)
+    controller.transcription_done.connect(lambda _txt, _sec: tray.enable_copy_last(True))
 
     settings_window: list[SettingsDialog] = []
+    history_window: list[HistoryDialog] = []
 
     def open_settings() -> None:
         if settings_window:
@@ -56,9 +61,23 @@ def main() -> int:
                 controller.apply_config(new_cfg, persist=True)
                 overlay.set_position(new_cfg.overlay_position)
                 tray.update_hotkey_label(new_cfg.active_hotkey)
-                logger.info("Configuration updated: %s", new_cfg)
+                logger.info("Configuration updated")
         finally:
             settings_window.clear()
+
+    def open_history() -> None:
+        if history_window:
+            dlg = history_window[0]
+            dlg.refresh()
+            dlg.raise_()
+            dlg.activateWindow()
+            return
+        dlg = HistoryDialog(history_store)
+        history_window.append(dlg)
+        try:
+            dlg.exec()
+        finally:
+            history_window.clear()
 
     def quit_app() -> None:
         logger.info("Shutting down LocalDictate...")
@@ -67,6 +86,8 @@ def main() -> int:
         app.quit()
 
     tray.settings_requested.connect(open_settings)
+    tray.history_requested.connect(open_history)
+    tray.copy_last_requested.connect(controller.copy_last_text)
     tray.toggle_requested.connect(controller.toggle_recording)
     tray.quit_requested.connect(quit_app)
 

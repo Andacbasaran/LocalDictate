@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ctypes
 import math
+import os
 import time
 
 from PyQt6.QtCore import Qt, QTimer, QRectF
@@ -11,11 +13,15 @@ from PyQt6.QtWidgets import QWidget
 
 from ..controller import AppState
 
+GWL_EXSTYLE = -20
+WS_EX_NOACTIVATE = 0x08000000
+WS_EX_TRANSPARENT = 0x00000020
+
 
 class FloatingOverlay(QWidget):
     """Sleek floating pill overlay that never steals keyboard focus."""
 
-    PILL_WIDTH = 244
+    PILL_WIDTH = 256
     PILL_HEIGHT = 48
 
     def __init__(self, position: str = "bottom_center") -> None:
@@ -27,6 +33,7 @@ class FloatingOverlay(QWidget):
         self._smooth_level = 0.0
         self._phase = 0.0
         self._record_start = 0.0
+        self._win32_styled = False
 
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint
@@ -39,17 +46,28 @@ class FloatingOverlay(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
         self.setFixedSize(self.PILL_WIDTH, self.PILL_HEIGHT)
 
-        # 30 FPS animation timer for waveform / processing pulse
         self._anim_timer = QTimer(self)
         self._anim_timer.setInterval(33)
         self._anim_timer.timeout.connect(self._tick)
 
-        # Auto-hide timer for transient notifications (done / error / cancelled)
         self._hide_timer = QTimer(self)
         self._hide_timer.setSingleShot(True)
         self._hide_timer.timeout.connect(self._auto_hide)
 
         self._reposition()
+
+    def _apply_win32_no_activate(self) -> None:
+        """Apply WS_EX_NOACTIVATE + WS_EX_TRANSPARENT at Win32 level for strict zero focus steal."""
+        if os.name != "nt" or self._win32_styled:
+            return
+        try:
+            hwnd = int(self.winId())
+            user32 = ctypes.windll.user32
+            style = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+            user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_NOACTIVATE | WS_EX_TRANSPARENT)
+            self._win32_styled = True
+        except Exception:
+            pass
 
     def set_position(self, position: str) -> None:
         self._position = position
@@ -79,7 +97,11 @@ class FloatingOverlay(QWidget):
             self._smooth_level = 0.0
             self._show_no_focus()
             self._anim_timer.start()
-        elif state in (AppState.TRANSCRIBING.value, AppState.LOADING_MODEL.value):
+        elif state in (
+            AppState.TRANSCRIBING.value,
+            AppState.REFINING.value,
+            AppState.LOADING_MODEL.value,
+        ):
             self._show_no_focus()
             self._anim_timer.start()
         elif state == AppState.ERROR.value:
@@ -87,11 +109,10 @@ class FloatingOverlay(QWidget):
             self._show_no_focus()
             self._hide_timer.start(2800)
         else:
-            # IDLE: briefly show confirmation if message is informative, else hide
             self._anim_timer.stop()
             if message and message != "Hazır":
                 self._show_no_focus()
-                self._hide_timer.start(1300)
+                self._hide_timer.start(1400)
             else:
                 self.hide()
 
@@ -103,6 +124,7 @@ class FloatingOverlay(QWidget):
     def _show_no_focus(self) -> None:
         if not self.isVisible():
             self.show()
+            self._apply_win32_no_activate()
 
     def _auto_hide(self) -> None:
         if self._state in (AppState.IDLE.value, AppState.ERROR.value):
@@ -120,16 +142,16 @@ class FloatingOverlay(QWidget):
         rect = QRectF(1.0, 1.0, self.width() - 2.0, self.height() - 2.0)
         radius = rect.height() / 2.0
 
-        # Background pill
         path = QPainterPath()
         path.addRoundedRect(rect, radius, radius)
-        painter.fillPath(path, QColor(18, 20, 26, 232))
+        painter.fillPath(path, QColor(18, 20, 26, 236))
 
-        # Accent border color by state
         if self._state == AppState.RECORDING.value:
-            accent = QColor(239, 68, 68)  # Crimson red
+            accent = QColor(239, 68, 68)  # Crimson
         elif self._state == AppState.TRANSCRIBING.value:
             accent = QColor(99, 102, 241)  # Indigo
+        elif self._state == AppState.REFINING.value:
+            accent = QColor(168, 85, 247)  # Purple (LLM)
         elif self._state == AppState.LOADING_MODEL.value:
             accent = QColor(245, 158, 11)  # Amber
         elif self._state == AppState.ERROR.value:
@@ -137,15 +159,15 @@ class FloatingOverlay(QWidget):
         else:
             accent = QColor(16, 185, 129)  # Emerald
 
-        pen = QPen(QColor(accent.red(), accent.green(), accent.blue(), 170), 1.4)
+        pen = QPen(QColor(accent.red(), accent.green(), accent.blue(), 180), 1.4)
         painter.setPen(pen)
         painter.drawPath(path)
 
-        # Left status dot (pulsing during active states)
         dot_radius = 5.5
         if self._state in (
             AppState.RECORDING.value,
             AppState.TRANSCRIBING.value,
+            AppState.REFINING.value,
             AppState.LOADING_MODEL.value,
         ):
             pulse = 0.5 + 0.5 * math.sin(self._phase * 1.4)
@@ -156,7 +178,9 @@ class FloatingOverlay(QWidget):
 
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(accent)
-        painter.drawEllipse(QRectF(24.0 - dot_radius, 24.0 - dot_radius, dot_radius * 2, dot_radius * 2))
+        painter.drawEllipse(
+            QRectF(24.0 - dot_radius, 24.0 - dot_radius, dot_radius * 2, dot_radius * 2)
+        )
 
         if self._state == AppState.RECORDING.value:
             self._paint_waveform(painter, accent)
@@ -188,8 +212,7 @@ class FloatingOverlay(QWidget):
         painter.end()
 
     def _paint_waveform(self, painter: QPainter, accent: QColor) -> None:
-        """Draw 9 smooth reactive equalizer bars driven by live microphone RMS."""
-        bar_count = 9
+        bar_count = 10
         bar_width = 4.0
         gap = 5.0
         start_x = 48.0
@@ -199,7 +222,6 @@ class FloatingOverlay(QWidget):
 
         painter.setPen(Qt.PenStyle.NoPen)
         for i in range(bar_count):
-            # Bell-curve envelope so center bars react strongest
             norm_pos = (i - (bar_count - 1) / 2.0) / ((bar_count - 1) / 2.0)
             envelope = 1.0 - 0.55 * (norm_pos * norm_pos)
             wave = 0.55 + 0.45 * math.sin(self._phase * 1.6 + i * 0.75)

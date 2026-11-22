@@ -18,22 +18,18 @@ def create_tray_icon(accent: QColor) -> QIcon:
     painter = QPainter(pixmap)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
 
-    # Dark rounded background circle
     painter.setPen(Qt.PenStyle.NoPen)
     painter.setBrush(QColor(24, 27, 36))
     painter.drawEllipse(QRectF(2, 2, size - 4, size - 4))
 
-    # Colored ring
     painter.setPen(QPen(accent, 4.0))
     painter.setBrush(Qt.BrushStyle.NoBrush)
     painter.drawEllipse(QRectF(4, 4, size - 8, size - 8))
 
-    # Microphone capsule
     painter.setPen(Qt.PenStyle.NoPen)
     painter.setBrush(QColor(248, 250, 252))
     painter.drawRoundedRect(QRectF(24, 14, 16, 24), 8.0, 8.0)
 
-    # Microphone arc & stand
     pen = QPen(QColor(248, 250, 252), 3.6, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap)
     painter.setPen(pen)
     painter.drawArc(QRectF(17, 20, 30, 24), 180 * 16, 180 * 16)
@@ -48,6 +44,8 @@ class TrayManager(QSystemTrayIcon):
     """Manages the Windows system tray icon and context menu."""
 
     settings_requested = pyqtSignal()
+    history_requested = pyqtSignal()
+    copy_last_requested = pyqtSignal()
     toggle_requested = pyqtSignal()
     quit_requested = pyqtSignal()
 
@@ -56,6 +54,7 @@ class TrayManager(QSystemTrayIcon):
             AppState.IDLE.value: create_tray_icon(QColor(16, 185, 129)),
             AppState.RECORDING.value: create_tray_icon(QColor(239, 68, 68)),
             AppState.TRANSCRIBING.value: create_tray_icon(QColor(99, 102, 241)),
+            AppState.REFINING.value: create_tray_icon(QColor(168, 85, 247)),
             AppState.LOADING_MODEL.value: create_tray_icon(QColor(245, 158, 11)),
             AppState.ERROR.value: create_tray_icon(QColor(248, 113, 113)),
         }
@@ -77,6 +76,15 @@ class TrayManager(QSystemTrayIcon):
         self._toggle_action.triggered.connect(self.toggle_requested.emit)
         self._menu.addAction(self._toggle_action)
 
+        self._copy_last_action = QAction("Son Dikteyi Kopyala", self._menu)
+        self._copy_last_action.setEnabled(False)
+        self._copy_last_action.triggered.connect(self.copy_last_requested.emit)
+        self._menu.addAction(self._copy_last_action)
+
+        self._history_action = QAction("Geçmiş & İstatistikler...", self._menu)
+        self._history_action.triggered.connect(self.history_requested.emit)
+        self._menu.addAction(self._history_action)
+
         self._settings_action = QAction("Ayarlar...", self._menu)
         self._settings_action.triggered.connect(self.settings_requested.emit)
         self._menu.addAction(self._settings_action)
@@ -96,6 +104,9 @@ class TrayManager(QSystemTrayIcon):
         self._hotkey_action.setText(f"Kısayol: {active_hotkey}")
         self.setToolTip(f"LocalDictate — {active_hotkey}")
 
+    def enable_copy_last(self, enabled: bool = True) -> None:
+        self._copy_last_action.setEnabled(enabled)
+
     def on_state_changed(self, state: str, message: str) -> None:
         icon = self._icons.get(state, self._icons[AppState.IDLE.value])
         self.setIcon(icon)
@@ -104,4 +115,4 @@ class TrayManager(QSystemTrayIcon):
 
     def _on_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
-            self.settings_requested.emit()
+            self.history_requested.emit()

@@ -1,4 +1,4 @@
-"""Core state machine orchestrating Hotkey -> Audio -> Whisper -> TextInjector -> UI."""
+"""Core state machine orchestrating Hotkey -> Audio -> Whisper -> PostProcess -> Injector -> History -> UI."""
 
 from __future__ import annotations
 
@@ -6,12 +6,17 @@ import logging
 import threading
 from enum import Enum
 
+import pyperclip
 from PyQt6.QtCore import QObject, pyqtSignal
 
 from .audio import AudioRecorder
+from .autostart import set_autostart
 from .config import AppConfig, save_config
+from .history import HistoryStore
 from .hotkeys import HotkeyManager
 from .injector import TextInjector
+from .postprocess import TextPostProcessor
+from .sounds import play_error_cue, play_start_cue, play_stop_cue
 from .transcriber import WhisperTranscriber
 
 logger = logging.getLogger(__name__)
@@ -22,15 +27,16 @@ class AppState(str, Enum):
     IDLE = "idle"
     RECORDING = "recording"
     TRANSCRIBING = "transcribing"
+    REFINING = "refining"
     ERROR = "error"
 
 
 class DictationController(QObject):
-    """Coordinates audio capture, local Whisper transcription, and text injection."""
+    """Coordinates audio capture, Whisper STT, Ollama post-processing, history, and text injection."""
 
     state_changed = pyqtSignal(str, str)  # (AppState.value, message)
     audio_level = pyqtSignal(float)  # 0.0 .. 1.0
-    transcription_done = pyqtSignal(str, float)  # (text, inference_sec)
+    transcription_done = pyqtSignal(str, float)  # (final_text, inference_sec)
     model_ready = pyqtSignal(str)  # model_size
     error_occurred = pyqtSignal(str)
 
@@ -39,14 +45,17 @@ class DictationController(QObject):
         config: AppConfig,
         recorder: AudioRecorder | None = None,
         transcriber: WhisperTranscriber | None = None,
+        postprocessor: TextPostProcessor | None = None,
         injector: TextInjector | None = None,
         hotkey_manager: HotkeyManager | None = None,
+        history: HistoryStore | None = None,
     ) -> None:
         super().__init__()
         self.config = config
         self._state_lock = threading.Lock()
         self._state = AppState.IDLE
         self._model_loading = False
+        self.last_text: str = ""
 
         self.recorder = recorder or AudioRecorder(
             device=config.input_device,
@@ -59,10 +68,12 @@ class DictationController(QObject):
             vad_filter=config.vad_filter,
             beam_size=config.beam_size,
         )
+        self.postprocessor = postprocessor or TextPostProcessor(config=config)
         self.injector = injector or TextInjector(
             restore_clipboard=config.restore_clipboard,
             paste_delay_ms=config.paste_delay_ms,
         )
+        self.history = history
         self.hotkey_manager = hotkey_manager or HotkeyManager(
             mode=config.hotkey_mode,
             hotkey=config.active_hotkey,
@@ -87,6 +98,17 @@ class DictationController(QObject):
         self.hotkey_manager.stop()
         if self.recorder.is_recording:
             self.recorder.cancel()
+
+    def copy_last_text(self) -> bool:
+        """Copy the most recent dictated text to clipboard."""
+        if not self.last_text:
+            return False
+        try:
+            pyperclip.copy(self.last_text)
+            self.state_changed.emit(AppState.IDLE.value, "Son metin kopyalandı")
+            return True
+        except Exception:
+            return False
 
     def preload_model(self) -> None:
         """Load the configured Whisper model asynchronously."""
@@ -115,6 +137,7 @@ class DictationController(QObject):
             with self._state_lock:
                 self._model_loading = False
                 self._state = AppState.ERROR
+            play_error_cue(self.config.sound_effects)
             msg = f"Model yüklenemedi: {exc}"
             self.error_occurred.emit(msg)
             self.state_changed.emit(AppState.ERROR.value, msg)
@@ -145,11 +168,13 @@ class DictationController(QObject):
             logger.exception("Failed to start microphone recording")
             with self._state_lock:
                 self._state = AppState.ERROR
+            play_error_cue(self.config.sound_effects)
             msg = f"Mikrofon açılamadı: {exc}"
             self.error_occurred.emit(msg)
             self.state_changed.emit(AppState.ERROR.value, msg)
             return
 
+        play_start_cue(self.config.sound_effects)
         self.state_changed.emit(AppState.RECORDING.value, "Dinleniyor...")
 
     def stop_recording(self) -> None:
@@ -160,6 +185,8 @@ class DictationController(QObject):
             self._state = AppState.TRANSCRIBING
 
         audio, duration = self.recorder.stop()
+        play_stop_cue(self.config.sound_effects)
+
         if duration < 0.2 or audio.size == 0:
             with self._state_lock:
                 self._state = AppState.IDLE
@@ -181,37 +208,82 @@ class DictationController(QObject):
             self._state = AppState.IDLE
 
         self.recorder.cancel()
+        play_stop_cue(self.config.sound_effects)
         self.state_changed.emit(AppState.IDLE.value, "İptal edildi")
 
     def _transcribe_worker(self, audio) -> None:
         try:
-            result = self.transcriber.transcribe(audio, language=self.config.language)
-            if result.text:
-                self.injector.inject(result.text)
-                self.transcription_done.emit(result.text, result.inference_sec)
-                with self._state_lock:
-                    self._state = AppState.IDLE
-                self.state_changed.emit(
-                    AppState.IDLE.value,
-                    f"Yapıştırıldı ({result.inference_sec:.1f}s)",
-                )
-            else:
+            initial_prompt = self.config.build_initial_prompt()
+            result = self.transcriber.transcribe(
+                audio,
+                language=self.config.language,
+                initial_prompt=initial_prompt,
+            )
+
+            if not result.text:
                 with self._state_lock:
                     self._state = AppState.IDLE
                 self.state_changed.emit(AppState.IDLE.value, "Konuşma algılanmadı")
+                return
+
+            if self.config.ollama_enabled:
+                with self._state_lock:
+                    self._state = AppState.REFINING
+                self.state_changed.emit(AppState.REFINING.value, "AI düzenliyor...")
+
+            processed = self.postprocessor.process(result.text)
+            final_text = processed.final_text
+
+            if not final_text.strip():
+                with self._state_lock:
+                    self._state = AppState.IDLE
+                self.state_changed.emit(AppState.IDLE.value, "Konuşma algılanmadı")
+                return
+
+            self.last_text = final_text.strip()
+            self.injector.inject(final_text)
+
+            if self.config.save_history and self.history is not None:
+                try:
+                    self.history.add(
+                        raw_text=result.text,
+                        final_text=self.last_text,
+                        language=result.language,
+                        model_size=self.config.model_size,
+                        audio_duration_sec=result.duration_sec,
+                        inference_sec=result.inference_sec,
+                        used_llm=processed.used_llm,
+                    )
+                except Exception:
+                    logger.exception("Failed to save dictation to history")
+
+            self.transcription_done.emit(final_text, result.inference_sec)
+            with self._state_lock:
+                self._state = AppState.IDLE
+            suffix = " · AI" if processed.used_llm else ""
+            self.state_changed.emit(
+                AppState.IDLE.value,
+                f"Yapıştırıldı ({result.inference_sec:.1f}s{suffix})",
+            )
         except Exception as exc:
             logger.exception("Transcription failed")
             with self._state_lock:
                 self._state = AppState.ERROR
+            play_error_cue(self.config.sound_effects)
             msg = f"Deşifre hatası: {exc}"
             self.error_occurred.emit(msg)
             self.state_changed.emit(AppState.ERROR.value, msg)
 
     def apply_config(self, new_config: AppConfig, persist: bool = True) -> None:
         """Apply updated user configuration live."""
+        prev_startup = self.config.launch_at_startup
         self.config = new_config
+        self.postprocessor.config = new_config
+
         if persist:
             save_config(new_config)
+            if new_config.launch_at_startup != prev_startup:
+                set_autostart(new_config.launch_at_startup)
 
         self.recorder.device = new_config.input_device
         self.injector.restore_clipboard = new_config.restore_clipboard

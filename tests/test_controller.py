@@ -10,7 +10,7 @@ from localdictate.controller import AppState, DictationController
 from localdictate.transcriber import TranscriptionResult
 
 
-def _make_controller(duration: float = 1.0, text: str = "Merhaba dünya"):
+def _make_controller(duration: float = 1.0, text: str = "Merhaba dünya", config: AppConfig | None = None, history=None):
     recorder = MagicMock()
     recorder.is_recording = False
     recorder.stop.return_value = (np.ones(int(16_000 * duration), dtype=np.float32), duration)
@@ -26,12 +26,14 @@ def _make_controller(duration: float = 1.0, text: str = "Merhaba dünya"):
     injector = MagicMock()
     hotkey_manager = MagicMock()
 
+    cfg = config or AppConfig(sound_effects=False)
     controller = DictationController(
-        config=AppConfig(),
+        config=cfg,
         recorder=recorder,
         transcriber=transcriber,
         injector=injector,
         hotkey_manager=hotkey_manager,
+        history=history,
     )
     return controller, recorder, transcriber, injector
 
@@ -79,3 +81,35 @@ def test_cancel_recording_returns_to_idle():
     assert controller.state == AppState.IDLE
     recorder.cancel.assert_called_once()
     transcriber.transcribe.assert_not_called()
+
+
+def test_dictation_applies_dictionary_and_saves_history(tmp_path):
+    from localdictate.history import HistoryStore
+
+    store = HistoryStore(db_path=tmp_path / "hist.db")
+    cfg = AppConfig(
+        sound_effects=False,
+        custom_vocabulary=["LocalDictate", "PyQt6"],
+        replacements={"lokal dikteyt": "LocalDictate"},
+    )
+    controller, _rec, transcriber, injector = _make_controller(
+        duration=1.0,
+        text="lokal dikteyt harika çalışıyor",
+        config=cfg,
+        history=store,
+    )
+
+    controller.start_recording()
+    controller.stop_recording()
+    deadline = time.monotonic() + 2.0
+    while controller.state != AppState.IDLE and time.monotonic() < deadline:
+        time.sleep(0.02)
+
+    assert controller.state == AppState.IDLE
+    transcriber.transcribe.assert_called_once()
+    _, kwargs = transcriber.transcribe.call_args
+    assert kwargs["initial_prompt"] == "LocalDictate, PyQt6"
+    injector.inject.assert_called_once_with("LocalDictate harika çalışıyor")
+    entries = store.list_recent()
+    assert len(entries) == 1
+    assert entries[0].final_text == "LocalDictate harika çalışıyor"
