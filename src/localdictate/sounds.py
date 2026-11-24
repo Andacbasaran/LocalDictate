@@ -5,7 +5,11 @@ from __future__ import annotations
 import threading
 
 import numpy as np
-import sounddevice as sd
+
+try:
+    import sounddevice as sd
+except Exception:  # pragma: no cover - headless CI without PulseAudio/PortAudio server
+    sd = None  # type: ignore[assignment]
 
 _SR = 24_000
 
@@ -33,6 +37,8 @@ _CUE_ERROR = _synth_tone([(330.0, 0.08), (261.63, 0.11)], volume=0.065)
 
 
 def _play_samples(samples: np.ndarray, wait: bool = False, max_wait_sec: float = 0.16) -> None:
+    if sd is None:
+        return
     done = threading.Event()
 
     def _worker() -> None:

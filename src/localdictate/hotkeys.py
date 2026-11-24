@@ -8,7 +8,10 @@ import threading
 import time
 from typing import Callable, Optional
 
-from pynput import keyboard
+try:
+    from pynput import keyboard
+except Exception:  # pragma: no cover - headless Linux without DISPLAY / X11
+    keyboard = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -148,7 +151,7 @@ def key_to_token(
     Guards Windows VK numeric ranges strictly to win32 so macOS Carbon keycodes
     (e.g. vk=49 for Space) and X11 keysyms are never corrupted into digits or letters.
     """
-    if key is None:
+    if key is None or keyboard is None:
         return None
     if isinstance(key, keyboard.Key):
         return key.name.lower()
@@ -258,6 +261,10 @@ class HotkeyManager:
         """Start the global hotkey listener. Returns False gracefully if blocked by OS permissions."""
         if self._listener is not None and self.is_running:
             return True
+        if keyboard is None:
+            self.is_running = False
+            self.listener_error = "pynput keyboard backend unavailable"
+            return False
         self.listener_error = None
         try:
             listener = keyboard.Listener(

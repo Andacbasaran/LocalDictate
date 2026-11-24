@@ -12,7 +12,11 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import numpy as np
-import sounddevice as sd
+
+try:
+    import sounddevice as sd
+except Exception:  # pragma: no cover - headless CI without PulseAudio/PortAudio server
+    sd = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
