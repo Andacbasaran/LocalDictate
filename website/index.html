@@ -1,0 +1,3335 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>LocalDictate — Sadece Konuşun. Her Uygulamaya Anında Yazın.</title>
+  <meta name="description" content="Windows x64, macOS Apple Silicon ve Linux için ~359 ms gecikmeli, 0 MB VRAM, %100 çevrimdışı açık kaynak masaüstü sesten metne dikte ve yapay zeka düzenleme stüdyosu." />
+  <meta name="keywords" content="LocalDictate, offline dictation, speech to text, faster-whisper, CTranslate2 INT8, Silero VAD, open source Wispr Flow alternative, Superwhisper alternative, local Ollama dictation, sesli dikte, çevrimdışı sesten metne, macOS Apple Silicon, Windows, Linux" />
+  <meta name="author" content="Andac Basaran" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="theme-color" content="#0A0A0D" />
+  <meta name="color-scheme" content="dark" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="LocalDictate" />
+  <meta property="og:url" content="https://localdictate.andacbasaran.com/" />
+  <meta property="og:locale" content="tr_TR" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:title" content="LocalDictate — Sadece Konuşun. Her Uygulamaya Anında Yazın." />
+  <meta property="og:description" content="VS Code, Mail, Slack ve her masaüstü uygulamada 0 MB VRAM ve %100 çevrimdışı çalışan, yazmaktan 3,5 kat hızlı açık kaynak sesli dikte stüdyosu." />
+  <meta property="og:image" content="https://localdictate.andacbasaran.com/assets/ui_preview.png?v=1.0.0" />
+  <meta property="og:image:alt" content="LocalDictate Studio v1.0.0 — Çevrimdışı Masaüstü Sesli Dikte ve Yapay Zeka Düzenleme Arayüzü" />
+  <meta property="og:image:width" content="960" />
+  <meta property="og:image:height" content="640" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="LocalDictate — Sadece Konuşun. Her Uygulamaya Anında Yazın." />
+  <meta name="twitter:description" content="VS Code, Mail, Slack ve her masaüstü uygulamada 0 MB VRAM ve %100 çevrimdışı çalışan, yazmaktan 3,5 kat hızlı açık kaynak sesli dikte stüdyosu." />
+  <meta name="twitter:image" content="https://localdictate.andacbasaran.com/assets/ui_preview.png?v=1.0.0" />
+  <meta name="twitter:image:alt" content="LocalDictate Studio v1.0.0 — Çevrimdışı Masaüstü Sesli Dikte ve Yapay Zeka Düzenleme Arayüzü" />
+
+  <link rel="canonical" href="https://localdictate.andacbasaran.com/" />
+  <link rel="alternate" hreflang="tr" href="https://localdictate.andacbasaran.com/tr" />
+  <link rel="alternate" hreflang="en" href="https://localdictate.andacbasaran.com/en" />
+  <link rel="alternate" hreflang="x-default" href="https://localdictate.andacbasaran.com/" />
+
+  <link rel="icon" type="image/png" href="/assets/app_icon.png?v=1.0.0" />
+  <link rel="shortcut icon" href="/favicon.ico?v=1.0.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "LocalDictate",
+    "alternateName": "LocalDictate Studio 2.0",
+    "applicationCategory": "ProductivityApplication",
+    "operatingSystem": "Windows 10, Windows 11, macOS 13+ (Apple Silicon), Linux",
+    "softwareVersion": "1.0.0",
+    "inLanguage": ["en", "tr"],
+    "isAccessibleForFree": true,
+    "license": "https://opensource.org/licenses/MIT",
+    "url": "https://localdictate.andacbasaran.com/",
+    "downloadUrl": "https://github.com/Andacbasaran/LocalDictate/releases/latest",
+    "codeRepository": "https://github.com/Andacbasaran/LocalDictate",
+    "screenshot": "https://localdictate.andacbasaran.com/assets/ui_preview.png?v=1.0.0",
+    "description": "Ultra-low-latency (~359 ms), 100% offline, 0 MB VRAM open-source desktop speech-to-text dictation and AI refinement studio for Windows x64, macOS Apple Silicon, and Linux.",
+    "featureList": [
+      "~359 ms end-to-end dictation-to-paste latency with 0.02 ms VAD and 92.1 us post-processing",
+      "0 MB VRAM usage on CPU powered by faster-whisper CTranslate2 INT8",
+      "100% air-gapped offline privacy lock blocking non-localhost traffic by default",
+      "App-Aware Auto-Mode Routing for VS Code, Cursor, Mail, Slack, and Terminals",
+      "Voice-to-Translate (TR->EN) across 12 languages and 7 quick dictation modes",
+      "Dynamic snippets with {{date}}, {{iso_date}}, {{time}}, and {{clipboard}} variables",
+      "Turkish accent-insensitive SQLite history search (0.20 ms) and offline audio file drop",
+      "Optional local Ollama and LM Studio LLM refinement for $0/month vs cloud tools",
+      "Native installers for Windows x64 (.exe), macOS Apple Silicon (.dmg), and Linux (.tar.gz)"
+    ],
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "author": {
+      "@type": "Person",
+      "name": "Andac Basaran",
+      "url": "https://andacbasaran.com"
+    }
+  }
+  </script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0A0A0D;
+      --surface: #131318;
+      --surface-elevated: #1B1B22;
+      --border: #26262F;
+      --border-strong: #3E3E4B;
+      --text: #FAFAFA;
+      --muted: #A1A1AA;
+      --subtle: #71717A;
+      --accent: #8B5CF6;
+      --accent-bright: #C4B5FD;
+      --accent-soft: rgba(139, 92, 246, 0.14);
+      --emerald: #10B981;
+      --rose: #F43F5E;
+      --sky: #38BDF8;
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:focus-visible,
+    button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Architectural dot-grid + GPU-composited cursor spotlight */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: radial-gradient(rgba(255, 255, 255, 0.065) 1px, transparent 1px);
+      background-size: 28px 28px;
+      mask-image: radial-gradient(ellipse 80% 70% at 50% 45%, #000 35%, transparent 100%);
+    }
+
+    .cursor-glow {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.11) 0%, rgba(139, 92, 246, 0.035) 35%, transparent 70%);
+      transform: translate3d(-999px, -999px, 0);
+      will-change: transform, opacity;
+      transition: opacity 0.4s ease;
+    }
+
+    @media (pointer: coarse), (prefers-reduced-motion: reduce) {
+      .cursor-glow {
+        display: none;
+      }
+    }
+
+    /* Persistent Minimal Topbar */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 50;
+      background: rgba(10, 10, 13, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .brand img {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      display: block;
+      flex-shrink: 0;
+      transition: transform 0.25s var(--ease-spring);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .brand:hover img {
+        transform: scale(1.06) rotate(-2deg);
+      }
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .top-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .top-link:hover {
+      color: var(--text);
+    }
+
+    /* Compact Segmented Language Switcher */
+    .lang-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      padding: 2px;
+      border-radius: 7px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      min-block-size: 28px;
+      min-inline-size: 32px;
+      padding: 4px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .lang-btn:hover {
+      color: var(--text);
+    }
+
+    .lang-btn[aria-pressed="true"] {
+      background: #25252E;
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    .btn-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--text);
+      border: 1px solid var(--text);
+      color: #09090B;
+      font-size: 0.82rem;
+      font-weight: 700;
+      min-block-size: 32px;
+      padding: 6px 14px;
+      border-radius: 7px;
+      white-space: nowrap;
+      transition: background-color 0.18s ease, transform 0.18s var(--ease-spring);
+    }
+
+    .btn-pill:hover {
+      background: #E4E4E7;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .btn-pill:hover {
+        transform: translateY(-1px);
+      }
+      .btn-pill:active {
+        transform: translateY(0) scale(0.98);
+      }
+    }
+
+    /* Right-Edge Scene Progress Rail */
+    .scene-rail {
+      position: fixed;
+      right: 22px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 45;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .rail-dot {
+      width: 8px;
+      height: 8px;
+      min-block-size: 24px;
+      min-inline-size: 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .rail-dot::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--border-strong);
+      transition: background-color 0.25s ease, transform 0.3s var(--ease-spring);
+    }
+
+    .rail-dot:hover::before {
+      background: var(--muted);
+    }
+
+    .rail-dot.active::before {
+      background: var(--accent);
+      transform: scaleY(3.2);
+    }
+
+    /* Stage & 3 Full-Viewport Scenes */
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      z-index: 10;
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 72px 24px 82px;
+      text-align: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .scene {
+        transform: translate3d(0, 24px, 0) scale(0.99);
+        transition:
+          opacity 0.45s var(--ease-out),
+          transform 0.55s var(--ease-out);
+      }
+
+      .scene.prev {
+        transform: translate3d(0, -24px, 0) scale(0.99);
+      }
+
+      /* Staggered reveal choreography inside active scene */
+      .scene [data-reveal] {
+        opacity: 0;
+        transform: translate3d(0, 14px, 0);
+        transition:
+          opacity 0.5s var(--ease-out),
+          transform 0.6s var(--ease-out);
+      }
+
+      .scene.active [data-reveal] {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+
+      .scene.active [data-reveal="1"] { transition-delay: 40ms; }
+      .scene.active [data-reveal="2"] { transition-delay: 95ms; }
+      .scene.active [data-reveal="3"] { transition-delay: 150ms; }
+      .scene.active [data-reveal="4"] { transition-delay: 205ms; }
+      .scene.active [data-reveal="5"] { transition-delay: 260ms; }
+    }
+
+    .scene.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    /* SCENE 0: OVERVIEW / HERO */
+    .logo-showcase {
+      margin-bottom: 18px;
+      position: relative;
+      display: inline-block;
+    }
+
+    .logo-showcase img {
+      width: 76px;
+      height: 76px;
+      border-radius: 18px;
+      border: 1px solid var(--border-strong);
+      display: block;
+      position: relative;
+      z-index: 2;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55);
+      transition: transform 0.35s var(--ease-spring), border-color 0.25s ease;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .logo-showcase::after {
+        content: "";
+        position: absolute;
+        inset: -8px;
+        border-radius: 24px;
+        border: 1px solid rgba(139, 92, 246, 0.32);
+        pointer-events: none;
+        animation: logo-ring-breathe 4.2s ease-in-out infinite;
+      }
+
+      .logo-showcase:hover img {
+        transform: translateY(-3px) scale(1.04);
+        border-color: rgba(139, 92, 246, 0.65);
+      }
+    }
+
+    @keyframes logo-ring-breathe {
+      0%, 100% { opacity: 0.35; transform: scale(1); }
+      50% { opacity: 0.88; transform: scale(1.045); }
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.74rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .live-dot {
+        animation: pulse-dot 2.4s ease-in-out infinite;
+      }
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.25); opacity: 0.7; }
+    }
+
+    .eyebrow {
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .headline {
+      font-size: clamp(2.05rem, 4.9vw, 3.7rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+      max-width: 820px;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .headline--md {
+      font-size: clamp(1.5rem, 3.5vw, 2.55rem);
+      margin-bottom: 16px;
+    }
+
+    .headline--sm {
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      margin-bottom: 12px;
+    }
+
+    .headline .accent-text {
+      color: var(--accent);
+      background: linear-gradient(120deg, #C4B5FD 0%, #8B5CF6 55%, #38BDF8 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subhead {
+      font-size: clamp(0.95rem, 1.38vw, 1.06rem);
+      color: var(--muted);
+      max-width: 590px;
+      font-weight: 400;
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+
+    /* CTAs */
+    .cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: var(--text);
+      color: #09090B;
+      border: 1px solid var(--text);
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 0.93rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      position: relative;
+      transition: background-color 0.18s ease, box-shadow 0.22s ease, transform 0.2s var(--ease-spring);
+    }
+
+    .btn-download:hover {
+      background: #EFEFF3;
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2);
+    }
+
+    .btn-download-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      background: var(--surface-elevated);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+      padding: 12px 21px;
+      border-radius: 10px;
+      font-size: 0.93rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.2s var(--ease-spring);
+    }
+
+    .btn-download-secondary:hover {
+      background: #25252E;
+      border-color: var(--muted);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .btn-download:hover,
+      .btn-download-secondary:hover {
+        transform: translateY(-2px);
+      }
+      .btn-download:active,
+      .btn-download-secondary:active {
+        transform: translateY(0) scale(0.985);
+      }
+    }
+
+    .caption-small {
+      margin-top: 11px;
+      font-size: 0.8rem;
+      color: var(--subtle);
+      line-height: 1.45;
+    }
+
+    .caption-small a {
+      color: var(--muted);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .caption-small a:hover {
+      color: var(--text);
+    }
+
+    .ecosystem-line {
+      margin-top: 7px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.69rem;
+      letter-spacing: 0.02em;
+      color: var(--subtle);
+      opacity: 0.82;
+    }
+
+    .ecosystem-line .eco-current {
+      color: var(--accent-bright);
+      font-weight: 600;
+    }
+
+    .ecosystem-line a {
+      transition: color 0.16s ease;
+    }
+
+    .ecosystem-line a:hover {
+      color: var(--text);
+    }
+
+    .specs-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+      max-width: 780px;
+    }
+
+    .spec-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 0.79rem;
+      font-weight: 500;
+      color: var(--muted);
+      white-space: nowrap;
+      transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s var(--ease-spring);
+    }
+
+    .spec-pill strong {
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+    }
+
+    .spec-pill:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .scroll-hint {
+      margin-top: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: var(--subtle);
+      font-family: inherit;
+      font-size: 0.76rem;
+      font-weight: 500;
+      cursor: pointer;
+      min-block-size: 28px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: color 0.18s ease;
+    }
+
+    .scroll-hint:hover {
+      color: var(--text);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .scroll-hint svg {
+        animation: float-down 2s ease-in-out infinite;
+      }
+    }
+
+    @keyframes float-down {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(4px); }
+    }
+
+    /* SCENE 1: INTERACTIVE LIVE DICTATION & APP-AWARE SIMULATOR */
+    .demo-card {
+      width: 100%;
+      max-width: 820px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      position: relative;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.48);
+    }
+
+    .demo-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .preset-pills {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .preset-btn {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-block-size: 28px;
+      padding: 4px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .preset-btn:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .preset-btn[aria-pressed="true"] {
+      background: var(--accent-soft);
+      border-color: rgba(139, 92, 246, 0.55);
+      color: var(--accent-bright);
+    }
+
+    .demo-controls-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .key-trigger-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      min-block-size: 28px;
+      border-radius: 7px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .key-trigger-btn:hover,
+    .key-trigger-btn.recording {
+      color: var(--text);
+      border-color: rgba(139, 92, 246, 0.6);
+      background: rgba(139, 92, 246, 0.14);
+    }
+
+    .key-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 0.68rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: #272731;
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+    }
+
+    .demo-pause-btn {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-block-size: 28px;
+      padding: 4px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .demo-pause-btn:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    /* Dictation Simulator Main Viewport */
+    .dictation-viewport {
+      position: relative;
+      padding: 40px 18px 18px;
+      border-radius: 12px;
+      background:
+        radial-gradient(ellipse 85% 75% at 50% 0%, rgba(139, 92, 246, 0.09), transparent 65%),
+        linear-gradient(180deg, #0D0E15 0%, #09090D 100%);
+      border: 1px solid var(--border-strong);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      overflow: hidden;
+      text-align: left;
+    }
+
+    .sim-header {
+      position: absolute;
+      top: 10px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .sim-app-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.67rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+    }
+
+    .sim-app-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .telemetry-strip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      color: var(--muted);
+    }
+
+    .telemetry-chip {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .telemetry-chip.accent {
+      color: #34D399;
+      border-color: rgba(16, 185, 129, 0.32);
+      background: rgba(16, 185, 129, 0.09);
+    }
+
+    /* Live Floating App-Aware HUD Pill */
+    .hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(19, 19, 26, 0.94);
+      border: 1px solid rgba(139, 92, 246, 0.42);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(139, 92, 246, 0.12);
+      max-width: 100%;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .hud-pill[data-state="rec"] {
+      border-color: rgba(244, 63, 94, 0.65);
+      box-shadow: 0 10px 30px rgba(244, 63, 94, 0.16), 0 0 0 1px rgba(244, 63, 94, 0.25);
+    }
+
+    .hud-pill[data-state="pasted"] {
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+
+    .hud-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.69rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      min-width: 96px;
+      color: #34D399;
+    }
+
+    .hud-pill[data-state="rec"] .hud-status {
+      color: #FB7185;
+    }
+
+    .hud-pill[data-state="transcribing"] .hud-status {
+      color: var(--accent-bright);
+    }
+
+    .hud-status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      flex-shrink: 0;
+    }
+
+    .hud-pill[data-state="rec"] .hud-status-dot {
+      background: var(--rose);
+      box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.28);
+    }
+
+    .hud-pill[data-state="transcribing"] .hud-status-dot {
+      background: var(--accent);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28);
+    }
+
+    /* 16-bar Electric Violet Waveform (Compositor-only scaleY) */
+    .hud-waveform {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      height: 22px;
+      padding: 0 2px;
+    }
+
+    .wave-bar {
+      width: 3px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, #C4B5FD 0%, #8B5CF6 100%);
+      transform: scaleY(var(--idle-h, 0.28));
+      transform-origin: center;
+      transition: transform 0.25s var(--ease-out), opacity 0.2s ease;
+      opacity: 0.72;
+    }
+
+    .hud-pill[data-state="rec"] .wave-bar {
+      background: linear-gradient(180deg, #FDA4AF 0%, #8B5CF6 100%);
+      opacity: 1;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .hud-pill[data-state="rec"] .wave-bar {
+        animation: wave-pulse 0.62s ease-in-out infinite alternate;
+        animation-delay: var(--d, 0ms);
+      }
+      .hud-pill[data-state="transcribing"] .wave-bar {
+        animation: wave-settle 0.75s ease-in-out infinite alternate;
+        animation-delay: var(--d, 0ms);
+      }
+    }
+
+    @keyframes wave-pulse {
+      0% { transform: scaleY(0.22); }
+      100% { transform: scaleY(var(--peak-h, 0.95)); }
+    }
+
+    @keyframes wave-settle {
+      0% { transform: scaleY(0.25); }
+      100% { transform: scaleY(0.55); }
+    }
+
+    .hud-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(139, 92, 246, 0.42);
+      color: var(--accent-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* Raw Speech -> Refined Output Diff Canvas */
+    .diff-canvas {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .diff-pane {
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: rgba(14, 14, 20, 0.85);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 118px;
+      transition: border-color 0.22s ease, background-color 0.22s ease;
+    }
+
+    .diff-pane--refined {
+      background: rgba(19, 19, 28, 0.92);
+      border-color: rgba(139, 92, 246, 0.36);
+    }
+
+    .diff-pane--refined.flash {
+      border-color: rgba(16, 185, 129, 0.65);
+    }
+
+    .diff-pane-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.64rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--subtle);
+    }
+
+    .diff-pane--refined .diff-pane-head {
+      color: var(--accent-bright);
+    }
+
+    .diff-wpm {
+      color: #34D399;
+      font-weight: 600;
+    }
+
+    .diff-raw-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      color: var(--muted);
+      transition: opacity 0.2s ease;
+    }
+
+    .filler-token {
+      color: #FDA4AF;
+      background: rgba(244, 63, 94, 0.14);
+      border-radius: 4px;
+      padding: 0 4px;
+      text-decoration: line-through;
+      text-decoration-color: rgba(244, 63, 94, 0.75);
+    }
+
+    .diff-refined-text {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.52;
+      color: var(--text);
+      white-space: pre-line;
+      transition: opacity 0.2s ease;
+    }
+
+    .diff-raw-text.changing,
+    .diff-refined-text.changing {
+      opacity: 0.25;
+    }
+
+    .sim-caret {
+      display: inline-block;
+      width: 2px;
+      height: 1.05em;
+      margin-left: 2px;
+      vertical-align: -0.15em;
+      background: var(--accent);
+      border-radius: 1px;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .sim-caret {
+        animation: caret-blink 1.05s steps(1, end) infinite;
+      }
+    }
+
+    @keyframes caret-blink {
+      0%, 55% { opacity: 1; }
+      56%, 100% { opacity: 0; }
+    }
+
+    /* Simulator Footer: Mode Selector Chips + Engine Switch */
+    .demo-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 13px;
+      flex-wrap: wrap;
+    }
+
+    .style-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .mode-chip-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .mode-chip-btn {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.71rem;
+      font-weight: 600;
+      min-block-size: 27px;
+      padding: 3px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+    }
+
+    .mode-chip-btn:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+
+    .mode-chip-btn[aria-pressed="true"] {
+      background: var(--accent-soft);
+      border-color: rgba(139, 92, 246, 0.58);
+      color: var(--accent-bright);
+    }
+
+    .mode-switch {
+      display: inline-flex;
+      padding: 2px;
+      border-radius: 7px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      gap: 2px;
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.73rem;
+      font-weight: 600;
+      min-block-size: 26px;
+      padding: 3px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .mode-btn:hover {
+      color: var(--text);
+    }
+
+    .mode-btn[aria-pressed="true"] {
+      background: #272732;
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    /* SCENE 2: INTERACTIVE STUDIO 2.0 UI SHOWCASE & DOWNLOADS */
+    .studio-showcase {
+      width: 100%;
+      max-width: 1020px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(265px, 1fr);
+      gap: 16px;
+      align-items: stretch;
+      margin-bottom: 14px;
+      text-align: left;
+    }
+
+    .studio-perspective {
+      width: 100%;
+      perspective: 1200px;
+      display: flex;
+    }
+
+    .studio-frame {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      border-radius: 14px;
+      overflow: hidden;
+      background: linear-gradient(150deg, #1B1B24 0%, #111116 100%);
+      border: 1px solid var(--border-strong);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.58);
+      transform-style: preserve-3d;
+      transition: transform 0.25s var(--ease-out), border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .studio-frame:hover {
+      border-color: rgba(139, 92, 246, 0.48);
+      box-shadow: 0 28px 72px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(139, 92, 246, 0.14);
+    }
+
+    .window-chrome {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 13px;
+      background: #15151C;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .window-chrome-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .window-dots {
+      display: inline-flex;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .window-dots span {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #2C2C36;
+      border: 1px solid #3B3B48;
+    }
+
+    .window-dots span:nth-child(1) { background: rgba(244, 63, 94, 0.6); border-color: transparent; }
+    .window-dots span:nth-child(2) { background: rgba(245, 158, 11, 0.55); border-color: transparent; }
+    .window-dots span:nth-child(3) { background: rgba(16, 185, 129, 0.55); border-color: transparent; }
+
+    .window-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .window-chrome-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .window-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      color: #34D399;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.28);
+    }
+
+    .window-zoom-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.71rem;
+      font-weight: 600;
+      min-block-size: 24px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+    }
+
+    .window-zoom-btn:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+      background: #25252F;
+    }
+
+    .studio-media-wrap {
+      position: relative;
+      flex: 1;
+      background: #0B0B0E;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Exact 960x640 (3:2) inner stage so hotspot percentages match screenshot pixels 1:1 */
+    .studio-img-stage {
+      position: relative;
+      width: min(100%, calc(38dvh * 1.5));
+      aspect-ratio: 960 / 640;
+      border-radius: 7px;
+      overflow: hidden;
+      background: #0C0C0E;
+    }
+
+    .studio-shot {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      cursor: zoom-in;
+      transition: opacity 0.22s ease;
+    }
+
+    .studio-shot[hidden] {
+      display: none;
+    }
+
+    /* Interactive Hotspot Pins */
+    .hotspot-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .hotspot-pin {
+      position: absolute;
+      left: var(--x, 50%);
+      top: var(--y, 50%);
+      transform: translate(-50%, -50%);
+      width: 26px;
+      height: 26px;
+      border-radius: 999px;
+      border: 1.5px solid #DDD6FE;
+      background: rgba(139, 92, 246, 0.94);
+      color: #FAFAFA;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 800;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 4px 16px rgba(139, 92, 246, 0.52);
+      transition: transform 0.2s var(--ease-spring), background-color 0.18s ease, box-shadow 0.2s ease;
+    }
+
+    .hotspot-pin:hover,
+    .hotspot-pin[aria-pressed="true"] {
+      transform: translate(-50%, -50%) scale(1.14);
+      background: #7C3AED;
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3), 0 6px 20px rgba(139, 92, 246, 0.6);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .hotspot-pin::after {
+        content: "";
+        position: absolute;
+        inset: -5px;
+        border-radius: 999px;
+        border: 1.5px solid rgba(196, 181, 253, 0.7);
+        pointer-events: none;
+        animation: pin-ripple 2.4s ease-out infinite;
+      }
+    }
+
+    @keyframes pin-ripple {
+      0% { transform: scale(0.85); opacity: 0.8; }
+      100% { transform: scale(1.65); opacity: 0; }
+    }
+
+    .hotspot-callout {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 13px;
+      background: #14141B;
+      border-top: 1px solid var(--border);
+      font-size: 0.76rem;
+      line-height: 1.38;
+      color: var(--muted);
+    }
+
+    .hotspot-callout-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .hotspot-callout-badge {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(139, 92, 246, 0.55);
+      color: var(--accent-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+    }
+
+    .hotspot-callout strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Right Side Interactive Inspector Tabs (styled from aria-selected + border indicator) */
+    .studio-inspector {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+
+    .inspector-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 100%;
+      padding: 12px 14px 12px 16px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      text-align: left;
+      font-family: inherit;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background-color 0.18s ease, border-color 0.2s ease, transform 0.2s var(--ease-spring);
+    }
+
+    .inspector-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 12px;
+      bottom: 12px;
+      border-inline-start: 3px solid transparent;
+      border-radius: 0 3px 3px 0;
+      transition: border-color 0.2s ease;
+    }
+
+    .inspector-card:hover {
+      background: #17171F;
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    .inspector-card[aria-selected="true"] {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, #171720 62%);
+      border-color: rgba(139, 92, 246, 0.5);
+      color: var(--text);
+    }
+
+    .inspector-card[aria-selected="true"]::before {
+      border-inline-start-color: var(--accent);
+    }
+
+    .inspector-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .inspector-card-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .inspector-step-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: #23232D;
+      border: 1px solid var(--border-strong);
+      color: var(--muted);
+    }
+
+    .inspector-card[aria-selected="true"] .inspector-step-num {
+      background: var(--accent-soft);
+      border-color: rgba(139, 92, 246, 0.55);
+      color: var(--accent-bright);
+    }
+
+    .inspector-card-desc {
+      font-size: 0.76rem;
+      line-height: 1.44;
+      color: var(--muted);
+    }
+
+    .inspector-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 2px;
+    }
+
+    .inspector-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.66rem;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .inspector-card[aria-selected="true"] .inspector-chip {
+      color: #E4E4E7;
+      border-color: #3A3A47;
+    }
+
+    /* Native Fullscreen Lightbox Dialog (Top-Layer Animated + Scroll Containment) */
+    dialog:modal {
+      overscroll-behavior: contain;
+    }
+
+    dialog::backdrop {
+      overflow: hidden;
+      overscroll-behavior: contain;
+    }
+
+    .studio-lightbox {
+      margin: auto;
+      width: min(94vw, 1080px);
+      max-height: 92dvh;
+      padding: 0;
+      border-radius: 16px;
+      border: 1px solid var(--border-strong);
+      background: #121218;
+      color: var(--text);
+      box-shadow: 0 32px 96px rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+      opacity: 0;
+      transition-property: opacity, transform, display, overlay;
+      transition-duration: 0.26s;
+      transition-timing-function: var(--ease-out);
+      transition-behavior: allow-discrete;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .studio-lightbox {
+        transform: scale(0.95);
+      }
+    }
+
+    .studio-lightbox[open]:where(:not([data-closing])) {
+      opacity: 1;
+    }
+
+    @starting-style {
+      .studio-lightbox[open]:where(:not([data-closing])) {
+        opacity: 0;
+      }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .studio-lightbox[open]:where(:not([data-closing])) {
+        transform: scale(1);
+      }
+      @starting-style {
+        .studio-lightbox[open]:where(:not([data-closing])) {
+          transform: scale(0.95);
+        }
+      }
+    }
+
+    .studio-lightbox::backdrop {
+      background-color: rgba(4, 4, 7, 0);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      transition-property: background-color, display, overlay;
+      transition-duration: 0.26s;
+      transition-timing-function: ease-out;
+      transition-behavior: allow-discrete;
+    }
+
+    .studio-lightbox[open]:where(:not([data-closing]))::backdrop {
+      background-color: rgba(4, 4, 7, 0.82);
+    }
+
+    @starting-style {
+      .studio-lightbox[open]:where(:not([data-closing]))::backdrop {
+        background-color: rgba(4, 4, 7, 0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .studio-lightbox,
+      .studio-lightbox::backdrop {
+        transition-duration: 0.1s;
+      }
+    }
+
+    .lightbox-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #16161E;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .lightbox-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .lightbox-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lightbox-btn {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      min-block-size: 30px;
+      padding: 5px 11px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .lightbox-btn:hover {
+      background: #292935;
+      border-color: var(--muted);
+    }
+
+    .lightbox-body {
+      padding: 14px;
+      background: #0A0A0D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .lightbox-body img {
+      width: 100%;
+      height: auto;
+      max-height: 76dvh;
+      object-fit: contain;
+      border-radius: 8px;
+      display: block;
+    }
+
+    /* Flat Bottom Navigation Dock */
+    .bottom-dock {
+      position: fixed;
+      bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 60;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      padding: 4px;
+      border-radius: 11px;
+      background: rgba(19, 19, 24, 0.9);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .dock-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      min-block-size: 32px;
+      padding: 7px 16px;
+      border-radius: 7px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .dock-btn:hover {
+      color: var(--text);
+    }
+
+    .dock-btn.active {
+      background: #25252E;
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    @media (forced-colors: active) {
+      .btn-download,
+      .btn-download-secondary,
+      .btn-pill,
+      .lang-btn[aria-pressed="true"],
+      .preset-btn[aria-pressed="true"],
+      .mode-chip-btn[aria-pressed="true"],
+      .mode-btn[aria-pressed="true"],
+      .dock-btn.active,
+      .inspector-card[aria-selected="true"] {
+        border: 2px solid ButtonText;
+      }
+      .inspector-card[aria-selected="true"]::before {
+        border-inline-start-color: Highlight;
+      }
+      .studio-frame,
+      .demo-card,
+      .spec-pill,
+      .lang-switch,
+      .bottom-dock,
+      .hud-pill {
+        border: 1px solid CanvasText;
+      }
+      .headline .accent-text {
+        -webkit-text-fill-color: CanvasText;
+      }
+    }
+
+    @media (max-width: 860px) {
+      #scene-1,
+      #scene-2 {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
+        padding-top: 72px;
+        padding-bottom: 84px;
+      }
+
+      .studio-showcase {
+        grid-template-columns: 1fr;
+        max-width: 560px;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .studio-inspector {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        overflow: visible;
+      }
+
+      .inspector-card {
+        min-width: 0;
+        padding: 8px 6px 10px;
+        align-items: center;
+        text-align: center;
+        gap: 4px;
+        border-radius: 10px;
+      }
+
+      .inspector-card::before {
+        left: 14px;
+        right: 14px;
+        top: auto;
+        bottom: 0;
+        border-inline-start: none;
+        border-block-end: 3px solid transparent;
+        border-radius: 3px 3px 0 0;
+      }
+
+      .inspector-card[aria-selected="true"]::before {
+        border-inline-start-color: transparent;
+        border-block-end-color: var(--accent);
+      }
+
+      .inspector-card-head {
+        justify-content: center;
+        width: 100%;
+      }
+
+      .inspector-card-title {
+        flex-direction: column;
+        gap: 4px;
+        font-size: 0.72rem;
+        line-height: 1.2;
+      }
+
+      .inspector-card-desc,
+      .inspector-chips,
+      .window-status {
+        display: none;
+      }
+
+      .window-chrome {
+        padding: 7px 10px;
+        gap: 6px;
+      }
+
+      .window-title {
+        font-size: 0.67rem;
+      }
+
+      .studio-media-wrap {
+        padding: 6px;
+      }
+
+      .studio-img-stage {
+        width: min(100%, calc(30dvh * 1.5));
+      }
+
+      .hotspot-callout {
+        padding: 8px 10px;
+        font-size: 0.72rem;
+        line-height: 1.35;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .topbar {
+        height: 56px;
+        padding: 0 14px;
+      }
+
+      .top-actions {
+        gap: 8px;
+      }
+
+      .hide-mobile,
+      .scene-rail {
+        display: none !important;
+      }
+
+      .scene {
+        padding: 64px 14px 78px;
+      }
+
+      #scene-1,
+      #scene-2 {
+        padding: 64px 14px 82px;
+      }
+
+      #scene-2 .eyebrow {
+        margin-bottom: 6px;
+      }
+
+      #scene-2 .headline--sm {
+        font-size: clamp(1.18rem, 5.2vw, 1.55rem);
+        margin-bottom: 10px;
+      }
+
+      .logo-showcase img {
+        width: 62px;
+        height: 62px;
+      }
+
+      .cta-group {
+        width: 100%;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .btn-download,
+      .btn-download-secondary {
+        width: 100%;
+        max-width: 280px;
+        padding: 11px 20px;
+        font-size: 0.88rem;
+      }
+
+      #scene-2 .cta-group {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        max-width: 420px;
+      }
+
+      #scene-2 .btn-download,
+      #scene-2 .btn-download-secondary {
+        max-width: none;
+        padding: 10px 10px;
+        font-size: 0.79rem;
+        gap: 6px;
+      }
+
+      .window-dots {
+        display: none;
+      }
+
+      .hotspot-pin {
+        width: 24px;
+        height: 24px;
+        font-size: 0.68rem;
+      }
+
+      .studio-img-stage {
+        width: min(100%, calc(26dvh * 1.5));
+      }
+
+      .studio-lightbox {
+        width: 96vw;
+        border-radius: 12px;
+      }
+
+      .lightbox-bar {
+        flex-wrap: wrap;
+        padding: 10px 12px;
+        gap: 8px;
+      }
+
+      .lightbox-title {
+        font-size: 0.8rem;
+      }
+
+      .lightbox-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      .lightbox-btn {
+        flex: 1;
+        text-align: center;
+        font-size: 0.74rem;
+        padding: 6px 8px;
+      }
+
+      .lightbox-body {
+        padding: 8px;
+      }
+
+      .demo-card {
+        padding: 14px 12px;
+      }
+
+      .dictation-viewport {
+        padding: 38px 12px 14px;
+      }
+
+      .diff-canvas {
+        grid-template-columns: 1fr;
+      }
+
+      .diff-pane {
+        min-height: 82px;
+        padding: 10px 12px;
+      }
+
+      .hud-pill {
+        gap: 8px;
+        padding: 6px 11px;
+      }
+
+      .hud-status {
+        min-width: auto;
+        font-size: 0.64rem;
+      }
+
+      .hud-waveform .wave-bar:nth-child(n+11) {
+        display: none;
+      }
+
+      .telemetry-strip {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body data-scene="0">
+
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursor-glow" aria-hidden="true"></div>
+
+  <!-- Persistent Minimal Flat Topbar -->
+  <header class="topbar">
+    <button type="button" class="brand" id="brand-home-btn" aria-label="LocalDictate Ana Sayfa">
+      <img src="/assets/app_icon.png?v=1.0.0" alt="" width="30" height="30" />
+      <span>LocalDictate</span>
+    </button>
+
+    <div class="top-actions">
+      <a href="https://github.com/Andacbasaran/LocalDictate" target="_blank" rel="noopener" class="top-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span class="hide-mobile">GitHub</span>
+      </a>
+      <a href="https://andacbasaran.com" target="_blank" rel="noopener" class="top-link hide-mobile">andacbasaran.com</a>
+
+      <div class="lang-switch" role="group" id="lang-switch" aria-label="Dil Seçimi">
+        <button type="button" class="lang-btn" data-lang="tr" lang="tr" aria-pressed="true">TR</button>
+        <button type="button" class="lang-btn" data-lang="en" lang="en" aria-pressed="false">EN</button>
+      </div>
+
+      <a href="/downloads/LocalDictate.exe" id="topbar-download-btn" class="btn-pill" download="LocalDictate.exe" data-i18n="topDownload">İndir</a>
+    </div>
+  </header>
+
+  <!-- Right-Edge Scene Progress Rail -->
+  <div class="scene-rail" aria-hidden="true">
+    <button type="button" class="rail-dot active" data-rail-target="0" tabindex="-1"></button>
+    <button type="button" class="rail-dot" data-rail-target="1" tabindex="-1"></button>
+    <button type="button" class="rail-dot" data-rail-target="2" tabindex="-1"></button>
+  </div>
+
+  <main class="stage" id="stage">
+
+    <!-- SCENE 0: OVERVIEW / HERO -->
+    <section class="scene active" id="scene-0">
+      <div class="logo-showcase" data-reveal="1">
+        <img src="/assets/app_icon.png?v=1.0.0" alt="LocalDictate Logo" width="76" height="76" fetchpriority="high" />
+      </div>
+
+      <div class="live-badge" data-reveal="1">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span data-i18n="heroBadge">v1.0.0 · Windows, macOS &amp; Linux</span>
+      </div>
+
+      <h1 class="headline" data-reveal="2">
+        <span data-i18n="heroTitleLine1">Sadece Konuşun.</span><br />
+        <span class="accent-text" data-i18n="heroTitleLine2">Her Uygulamaya Anında Yazın.</span>
+      </h1>
+
+      <p class="subhead" data-reveal="3" data-i18n="heroSubhead">
+        VS Code, Mail, Slack ve tüm masaüstü uygulamalarda faster-whisper INT8 ile %100 çevrimdışı, 0 MB VRAM ve klavyeden 3,5× daha hızlı (150 WPM) akıllı sesli dikte — ayda $0.
+      </p>
+
+      <div class="cta-group" data-reveal="4">
+        <a href="/downloads/LocalDictate.exe" class="btn-download" download="LocalDictate.exe">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+          <span data-i18n="heroWinBtn">Windows (.exe) İndir</span>
+        </a>
+        <a href="/downloads/LocalDictate-macOS.dmg" class="btn-download-secondary" download="LocalDictate-macOS.dmg">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.09-.52 2.72-1.3z"/></svg>
+          <span data-i18n="heroMacBtn">macOS Apple Silicon (.dmg)</span>
+        </a>
+      </div>
+
+      <div class="caption-small" data-reveal="4">
+        <span data-i18n="heroCaptionPrefix">v1.0.0 · 3,5× Daha Hızlı · $0/ay ·</span>
+        <a href="/downloads/LocalDictate-Linux.tar.gz" download="LocalDictate-Linux.tar.gz" data-i18n="heroLinuxLink">Linux (.tar.gz)</a>
+        <span>·</span>
+        <a href="https://github.com/Andacbasaran/LocalDictate" target="_blank" rel="noopener" data-i18n="heroCaptionLink">Açık Kaynak (MIT)</a>
+      </div>
+
+      <div class="specs-row" data-reveal="5">
+        <div class="spec-pill"><strong id="latency-counter">~359 ms</strong> <span data-i18n="specLatency">Dikteden Yapıştırmaya</span></div>
+        <div class="spec-pill"><strong>0 MB</strong> <span data-i18n="specVram">VRAM · %100 Çevrimdışı</span></div>
+        <div class="spec-pill" data-i18n="specModes">Uygulama Farkında AI Modları</div>
+        <a href="https://github.com/Andacbasaran/LocalDictate" target="_blank" rel="noopener" class="spec-pill">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span data-i18n="specMit">Open Source MIT</span>
+        </a>
+      </div>
+
+      <button type="button" class="scroll-hint" id="scroll-next-btn" data-reveal="5">
+        <span data-i18n="heroExplore">Canlı dikte simülatörünü dene</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </section>
+
+    <!-- SCENE 1: INTERACTIVE LIVE DICTATION & APP-AWARE SIMULATOR -->
+    <section class="scene" id="scene-1" inert>
+      <div class="eyebrow" data-reveal="1" data-i18n="simEyebrow">Canlı Dikte &amp; Uygulama Farkında Simülatör</div>
+      <h2 class="headline headline--md" data-reveal="2">
+        <span data-i18n="simTitle1">Bir kısayol.</span>
+        <span class="accent-text" data-i18n="simTitle2">Her uygulamada akıllı dikte.</span>
+      </h2>
+
+      <div class="demo-card" data-reveal="3">
+        <div class="demo-toolbar">
+          <div class="preset-pills" role="group" id="scenario-presets" aria-label="Hedef Uygulama Senaryoları">
+            <button type="button" class="preset-btn" data-scenario="0" aria-pressed="true">VS Code · Code</button>
+            <button type="button" class="preset-btn" data-scenario="1" aria-pressed="false">Gmail · Formal</button>
+            <button type="button" class="preset-btn" data-scenario="2" aria-pressed="false">Slack · TR → EN</button>
+          </div>
+
+          <div class="demo-controls-right">
+            <button type="button" class="key-trigger-btn" id="btn-sim-ptt">
+              <span class="key-badge">⌥ / Space</span>
+              <span data-i18n="pttBtnLabel">Konuş &amp; Yapıştır</span>
+            </button>
+            <button type="button" class="demo-pause-btn" id="btn-demo-pause">Duraklat</button>
+          </div>
+        </div>
+
+        <div class="dictation-viewport" id="dictation-viewport">
+          <div class="sim-header">
+            <span class="sim-app-label">
+              <span class="sim-app-dot" aria-hidden="true"></span>
+              <span id="sim-app-window">VS Code — worker.py</span>
+            </span>
+            <div class="telemetry-strip" aria-hidden="true">
+              <span class="telemetry-chip" id="tel-vad">VAD 0.02 ms</span>
+              <span class="telemetry-chip" id="tel-post">Post 92 µs</span>
+              <span class="telemetry-chip" id="tel-vram">0 MB VRAM</span>
+              <span class="telemetry-chip accent" id="tel-state">PASTED · 359 ms</span>
+            </div>
+          </div>
+
+          <!-- Floating App-Aware HUD Pill with 16-bar electric violet waveform -->
+          <div class="hud-pill" id="hud-pill" data-state="pasted" aria-live="polite">
+            <span class="hud-status">
+              <span class="hud-status-dot" aria-hidden="true"></span>
+              <span id="hud-status-text">PASTED</span>
+            </span>
+
+            <div class="hud-waveform" aria-hidden="true">
+              <span class="wave-bar" style="--idle-h:0.22;--peak-h:0.55;--d:0ms"></span>
+              <span class="wave-bar" style="--idle-h:0.32;--peak-h:0.78;--d:70ms"></span>
+              <span class="wave-bar" style="--idle-h:0.46;--peak-h:0.92;--d:140ms"></span>
+              <span class="wave-bar" style="--idle-h:0.36;--peak-h:0.70;--d:40ms"></span>
+              <span class="wave-bar" style="--idle-h:0.62;--peak-h:1.00;--d:110ms"></span>
+              <span class="wave-bar" style="--idle-h:0.52;--peak-h:0.86;--d:180ms"></span>
+              <span class="wave-bar" style="--idle-h:0.74;--peak-h:0.98;--d:20ms"></span>
+              <span class="wave-bar" style="--idle-h:0.66;--peak-h:0.88;--d:90ms"></span>
+              <span class="wave-bar" style="--idle-h:0.80;--peak-h:1.00;--d:150ms"></span>
+              <span class="wave-bar" style="--idle-h:0.58;--peak-h:0.84;--d:55ms"></span>
+              <span class="wave-bar" style="--idle-h:0.70;--peak-h:0.96;--d:125ms"></span>
+              <span class="wave-bar" style="--idle-h:0.48;--peak-h:0.82;--d:195ms"></span>
+              <span class="wave-bar" style="--idle-h:0.56;--peak-h:0.90;--d:35ms"></span>
+              <span class="wave-bar" style="--idle-h:0.38;--peak-h:0.74;--d:105ms"></span>
+              <span class="wave-bar" style="--idle-h:0.30;--peak-h:0.64;--d:165ms"></span>
+              <span class="wave-bar" style="--idle-h:0.22;--peak-h:0.48;--d:80ms"></span>
+            </div>
+
+            <span class="hud-mode-badge" id="hud-mode-badge">Code · INT8</span>
+          </div>
+
+          <!-- Raw Speech -> Refined Output Diff Canvas -->
+          <div class="diff-canvas">
+            <div class="diff-pane">
+              <div class="diff-pane-head">
+                <span data-i18n="rawSpeechLabel">HAM KONUŞMA (WHISPER)</span>
+                <span id="diff-lang-tag">AUTO · 16 kHz</span>
+              </div>
+              <div class="diff-raw-text" id="diff-raw-text"></div>
+            </div>
+
+            <div class="diff-pane diff-pane--refined" id="diff-refined-pane">
+              <div class="diff-pane-head">
+                <span data-i18n="refinedOutputLabel">DÜZENLENEN ÇIKTI · YAPIŞTIRILDI</span>
+                <span class="diff-wpm" id="diff-wpm">158 WPM · 3.5×</span>
+              </div>
+              <div class="diff-refined-text" id="diff-refined-text"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="demo-footer">
+          <div class="style-group">
+            <span data-i18n="modeSelectorLabel">Mod:</span>
+            <div class="mode-chip-group" role="group" id="mode-chips" aria-label="Dikte Modu">
+              <button type="button" class="mode-chip-btn" data-mode="clean" aria-pressed="false">Clean</button>
+              <button type="button" class="mode-chip-btn" data-mode="code" aria-pressed="true">Code</button>
+              <button type="button" class="mode-chip-btn" data-mode="formal" aria-pressed="false">Formal</button>
+              <button type="button" class="mode-chip-btn" data-mode="tr2en" aria-pressed="false">TR → EN</button>
+            </div>
+          </div>
+
+          <div class="style-group">
+            <div class="mode-switch" role="group" id="engine-switch" aria-label="İşleme Motoru">
+              <button type="button" class="mode-btn" data-engine="int8" aria-pressed="true">Whisper INT8</button>
+              <button type="button" class="mode-btn" data-engine="llm" aria-pressed="false">+ Local LLM</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SCENE 2: INTERACTIVE STUDIO 2.0 UI SHOWCASE & DOWNLOADS -->
+    <section class="scene" id="scene-2" inert>
+      <div class="eyebrow" data-reveal="1" data-i18n="studioEyebrow">LocalDictate Studio 2.0 · v1.0.0</div>
+      <h2 class="headline headline--sm" data-reveal="2">
+        <span data-i18n="studioTitle1">Sade. Hızlı.</span>
+        <span class="accent-text" data-i18n="studioTitle2">%100 sizin cihazınızda.</span>
+      </h2>
+
+      <div class="studio-showcase" data-reveal="3">
+        <!-- Left: 3D-Tilt Studio App Window with Accurate Hotspots & Native Dialog Zoom -->
+        <div class="studio-perspective">
+          <div class="studio-frame" id="studio-tilt-card">
+            <div class="window-chrome">
+              <div class="window-chrome-left">
+                <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                <span class="window-title" id="window-title-text">LocalDictate Studio · 1. Dikte Stüdyosu</span>
+              </div>
+              <div class="window-chrome-right">
+                <span class="window-status">● 0 MB VRAM · INT8</span>
+                <button type="button" class="window-zoom-btn" id="btn-open-lightbox">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                  <span data-i18n="zoomBtn">Tam Ekran</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="studio-media-wrap" role="tabpanel" id="studio-tabpanel" aria-labelledby="tab-btn-0">
+              <div class="studio-img-stage" id="studio-img-stage">
+                <img class="studio-shot active" data-shot="0" src="/assets/ui_preview.png?v=1.0.0" alt="LocalDictate Studio 2.0 — Dikte Stüdyosu" width="960" height="640" decoding="async" />
+                <img class="studio-shot" data-shot="1" src="/assets/ui_preview_history.png?v=1.0.0" alt="LocalDictate Studio 2.0 — Geçmiş ve Kısaltmalar" width="960" height="640" loading="lazy" decoding="async" hidden />
+                <img class="studio-shot" data-shot="2" src="/assets/ui_preview_settings.png?v=1.0.0" alt="LocalDictate Studio 2.0 — Ayarlar ve Telemetri" width="960" height="640" loading="lazy" decoding="async" hidden />
+
+                <div class="hotspot-layer" id="hotspot-layer">
+                  <button type="button" class="hotspot-pin" data-pin="0" style="--x: 53%; --y: 21%;" aria-pressed="true" aria-label="Feature 1">1</button>
+                  <button type="button" class="hotspot-pin" data-pin="1" style="--x: 81%; --y: 90%;" aria-pressed="false" aria-label="Feature 2">2</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="hotspot-callout" id="hotspot-callout">
+              <div class="hotspot-callout-main">
+                <span class="hotspot-callout-badge" id="callout-num">1</span>
+                <span><strong id="callout-title">Canlı Sahne &amp; Uygulama Yönlendirme:</strong> <span id="callout-desc">Ön plandaki uygulamayı algılar (VS Code → Code), Silero VAD ve 310 ms INT8 STT ile ham/düzenli farkı canlı gösterir.</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: 3 Interactive Inspector Tabs -->
+        <div class="studio-inspector" role="tablist" id="preview-tablist" aria-label="Arayüz Sekmeleri" aria-orientation="vertical">
+          <button type="button" role="tab" id="tab-btn-0" aria-selected="true" tabindex="0" class="inspector-card" data-tab="0">
+            <div class="inspector-card-head">
+              <span class="inspector-card-title">
+                <span class="inspector-step-num">01</span>
+                <span data-i18n="tabStudio">Dikte Stüdyosu</span>
+              </span>
+            </div>
+            <p class="inspector-card-desc" data-i18n="tabStudioDesc">Canlı dalga formu, ham/düzenli metin karşılaştırması, 7 hızlı mod, ses dosyası bırakma ve hava boşluklu çevrimdışı kilit.</p>
+            <div class="inspector-chips">
+              <span class="inspector-chip">App-Aware</span>
+              <span class="inspector-chip">7 Modes</span>
+              <span class="inspector-chip">Air-Gapped</span>
+            </div>
+          </button>
+
+          <button type="button" role="tab" id="tab-btn-1" aria-selected="false" tabindex="-1" class="inspector-card" data-tab="1">
+            <div class="inspector-card-head">
+              <span class="inspector-card-title">
+                <span class="inspector-step-num">02</span>
+                <span data-i18n="tabHistory">Geçmiş &amp; Kısaltmalar</span>
+              </span>
+            </div>
+            <p class="inspector-card-desc" data-i18n="tabHistoryDesc">Türkçe aksan duyarsız SQLite arama (0.20 ms), kazanılan süre metrikleri, dinamik {{iso_date}} kısaltmaları ve .MD/.CSV dışa aktarma.</p>
+            <div class="inspector-chips">
+              <span class="inspector-chip">0.20 ms Search</span>
+              <span class="inspector-chip">{{clipboard}}</span>
+              <span class="inspector-chip">SQLite WAL</span>
+            </div>
+          </button>
+
+          <button type="button" role="tab" id="tab-btn-2" aria-selected="false" tabindex="-1" class="inspector-card" data-tab="2">
+            <div class="inspector-card-head">
+              <span class="inspector-card-title">
+                <span class="inspector-step-num">03</span>
+                <span data-i18n="tabSettings">Ayarlar &amp; Telemetri</span>
+              </span>
+            </div>
+            <p class="inspector-card-desc" data-i18n="tabSettingsDesc">0 MB VRAM CPU telemetrisi, mikrofon VU testi, sistem geneli Toggle/PTT kısayolları, Whisper model yöneticisi ve yerel Ollama/LM Studio.</p>
+            <div class="inspector-chips">
+              <span class="inspector-chip">0 MB VRAM</span>
+              <span class="inspector-chip">Ollama / LLM</span>
+              <span class="inspector-chip">PTT Hotkey</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <div class="cta-group" data-reveal="4">
+        <a href="/downloads/LocalDictate.exe" class="btn-download" download="LocalDictate.exe">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
+          <span>Windows (.exe)</span>
+        </a>
+        <a href="/downloads/LocalDictate-macOS.dmg" class="btn-download-secondary" download="LocalDictate-macOS.dmg">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.33c.64-.78 1.08-1.86.96-2.94-.93.04-2.06.62-2.72 1.4-.58.68-1.1 1.79-.96 2.84 1.04.08 2.09-.52 2.72-1.3z"/></svg>
+          <span>macOS (.dmg)</span>
+        </a>
+        <a href="/downloads/LocalDictate-Linux.tar.gz" class="btn-download-secondary hide-mobile" download="LocalDictate-Linux.tar.gz">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 20h8M12 18v2"/><path d="M7 9l3 3-3 3M13 15h4"/></svg>
+          <span>Linux (.tar.gz)</span>
+        </a>
+      </div>
+
+      <div class="caption-small" data-reveal="5">
+        <span data-i18n="studioCaptionPrefix">En güncel v1.0.0 sürümünü doğrudan indirir ·</span>
+        <a href="/downloads/LocalDictate-Linux.tar.gz" download="LocalDictate-Linux.tar.gz">Linux (.tar.gz)</a>
+        <span>·</span>
+        <a href="https://github.com/Andacbasaran/LocalDictate/releases/latest" target="_blank" rel="noopener" data-i18n="studioCaptionLink">Tüm Paketler (GitHub Releases)</a>
+      </div>
+
+      <div class="ecosystem-line" data-reveal="5" aria-label="Local AI Desktop Ecosystem">
+        <a href="https://subvisionai.andacbasaran.com" target="_blank" rel="noopener">SubVision AI</a> · ClearMic · <span class="eco-current">LocalDictate</span> · LocalMinutes · LocalRecall
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Native Fullscreen Studio Lightbox (closedby="any", no redundant ARIA) -->
+  <dialog id="studio-lightbox" class="studio-lightbox" closedby="any" aria-labelledby="lightbox-title">
+    <div class="lightbox-bar">
+      <h2 class="lightbox-title" id="lightbox-title">LocalDictate Studio · 1. Dikte Stüdyosu</h2>
+      <div class="lightbox-actions">
+        <button type="button" class="lightbox-btn" id="lightbox-prev" data-i18n="lightboxPrev">← Önceki</button>
+        <button type="button" class="lightbox-btn" id="lightbox-next" data-i18n="lightboxNext">Sonraki →</button>
+        <button type="button" class="lightbox-btn" id="lightbox-close" autofocus data-i18n="lightboxClose">Kapat</button>
+      </div>
+    </div>
+    <div class="lightbox-body">
+      <img id="lightbox-img" src="/assets/ui_preview.png?v=1.0.0" alt="LocalDictate Studio 2.0" width="960" height="640" decoding="async" />
+    </div>
+  </dialog>
+
+  <nav class="bottom-dock" id="bottom-dock" aria-label="Sahne Seçici">
+    <button type="button" class="dock-btn active" data-scene-target="0" aria-current="step" data-i18n="dockIntro">Genel Bakış</button>
+    <button type="button" class="dock-btn" data-scene-target="1" data-i18n="dockSim">Simülatör</button>
+    <button type="button" class="dock-btn" data-scene-target="2" data-i18n="dockStudio">Studio UI</button>
+  </nav>
+
+  <script>
+    window.__INITIAL_LANG__ = null;
+
+    const I18N = {
+      tr: {
+        pageTitle: "LocalDictate — Sadece Konuşun. Her Uygulamaya Anında Yazın.",
+        metaDescription: "Windows x64, macOS Apple Silicon ve Linux için ~359 ms gecikmeli, 0 MB VRAM, %100 çevrimdışı açık kaynak masaüstü sesten metne dikte ve yapay zeka düzenleme stüdyosu.",
+        langSwitchLabel: "Dil Seçimi",
+        brandAria: "LocalDictate Ana Sayfa",
+        topDownload: "İndir",
+        heroBadge: "v1.0.0 · Windows, macOS & Linux",
+        heroTitleLine1: "Sadece Konuşun.",
+        heroTitleLine2: "Her Uygulamaya Anında Yazın.",
+        heroSubhead: "VS Code, Mail, Slack ve tüm masaüstü uygulamalarda faster-whisper INT8 ile %100 çevrimdışı, 0 MB VRAM ve klavyeden 3,5× daha hızlı (150 WPM) akıllı sesli dikte — ayda $0.",
+        heroWinBtn: "Windows (.exe) İndir",
+        heroMacBtn: "macOS Apple Silicon (.dmg)",
+        heroCaptionPrefix: "v1.0.0 · 3,5× Daha Hızlı · $0/ay ·",
+        heroLinuxLink: "Linux (.tar.gz)",
+        heroCaptionLink: "Açık Kaynak (MIT)",
+        specLatency: "Dikteden Yapıştırmaya",
+        specVram: "VRAM · %100 Çevrimdışı",
+        specModes: "Uygulama Farkında AI Modları",
+        specMit: "Açık Kaynak MIT",
+        heroExplore: "Canlı dikte simülatörünü dene",
+        simEyebrow: "Canlı Dikte & Uygulama Farkında Simülatör",
+        simTitle1: "Bir kısayol.",
+        simTitle2: "Her uygulamada akıllı dikte.",
+        scenariosAria: "Hedef Uygulama Senaryoları",
+        pttBtnLabel: "Konuş & Yapıştır",
+        pauseLabel: "Duraklat",
+        playLabel: "Oynat",
+        rawSpeechLabel: "HAM KONUŞMA (WHISPER)",
+        refinedOutputLabel: "DÜZENLENEN ÇIKTI · YAPIŞTIRILDI",
+        modeSelectorLabel: "Mod:",
+        modeChipsAria: "Dikte Modu",
+        engineSwitchAria: "İşleme Motoru",
+        studioEyebrow: "LocalDictate Studio 2.0 · v1.0.0",
+        studioTitle1: "Sade. Hızlı.",
+        studioTitle2: "%100 sizin cihazınızda.",
+        previewTabsLabel: "Arayüz Sekmeleri",
+        zoomBtn: "Tam Ekran",
+        lightboxPrev: "← Önceki",
+        lightboxNext: "Sonraki →",
+        lightboxClose: "Kapat",
+        tabStudio: "Dikte Stüdyosu",
+        tabStudioDesc: "Canlı dalga formu, ham/düzenli metin karşılaştırması, 7 hızlı mod, ses dosyası bırakma ve hava boşluklu çevrimdışı kilit.",
+        tabHistory: "Geçmiş & Kısaltmalar",
+        tabHistoryDesc: "Türkçe aksan duyarsız SQLite arama (0.20 ms), kazanılan süre metrikleri, dinamik {{iso_date}} kısaltmaları ve .MD/.CSV dışa aktarma.",
+        tabSettings: "Ayarlar & Telemetri",
+        tabSettingsDesc: "0 MB VRAM CPU telemetrisi, mikrofon VU testi, sistem geneli Toggle/PTT kısayolları, Whisper model yöneticisi ve yerel Ollama/LM Studio.",
+        studioCaptionPrefix: "En güncel v1.0.0 sürümünü doğrudan indirir ·",
+        studioCaptionLink: "Tüm Paketler (GitHub Releases)",
+        dockAria: "Sahne Seçici",
+        dockIntro: "Genel Bakış",
+        dockSim: "Simülatör",
+        dockStudio: "Studio UI",
+        shotAlts: [
+          "LocalDictate Studio 2.0 — Dikte Stüdyosu ve Canlı Dalga Formu",
+          "LocalDictate Studio 2.0 — Geçmiş, Türkçe Arama ve Dinamik Kısaltmalar",
+          "LocalDictate Studio 2.0 — Donanım Telemetrisi, Kısayollar ve Yerel LLM Ayarları"
+        ]
+      },
+      en: {
+        pageTitle: "LocalDictate — Just Speak. Instant Offline Dictation Everywhere.",
+        metaDescription: "Ultra-low-latency (~359 ms), 100% offline, 0 MB VRAM open-source desktop speech-to-text dictation and AI refinement studio for Windows x64, macOS Apple Silicon, and Linux.",
+        langSwitchLabel: "Language Switcher",
+        brandAria: "LocalDictate Home",
+        topDownload: "Download",
+        heroBadge: "v1.0.0 · Windows, macOS & Linux",
+        heroTitleLine1: "Just Speak.",
+        heroTitleLine2: "Instant Offline Dictation Everywhere.",
+        heroSubhead: "Speak naturally in VS Code, Mail, Slack, or any desktop app — faster-whisper INT8 pastes clean, app-aware text locally at 150 WPM (3.5× faster than typing), 0 MB VRAM, and $0/mo.",
+        heroWinBtn: "Download for Windows (.exe)",
+        heroMacBtn: "macOS Apple Silicon (.dmg)",
+        heroCaptionPrefix: "v1.0.0 · 3.5× Faster · $0/mo vs $15/mo cloud ·",
+        heroLinuxLink: "Linux (.tar.gz)",
+        heroCaptionLink: "Open Source (MIT)",
+        specLatency: "Dictation-to-Paste",
+        specVram: "VRAM · 100% Offline",
+        specModes: "App-Aware AI Modes",
+        specMit: "Open Source MIT",
+        heroExplore: "Try live dictation simulator",
+        simEyebrow: "Interactive Live Dictation & App-Aware Simulator",
+        simTitle1: "One hotkey.",
+        simTitle2: "Smart dictation in every app.",
+        scenariosAria: "Target Application Scenarios",
+        pttBtnLabel: "Hold-to-Talk",
+        pauseLabel: "Pause",
+        playLabel: "Play",
+        rawSpeechLabel: "RAW SPEECH (WHISPER)",
+        refinedOutputLabel: "REFINED OUTPUT · PASTED",
+        modeSelectorLabel: "Mode:",
+        modeChipsAria: "Dictation Mode",
+        engineSwitchAria: "Processing Engine",
+        studioEyebrow: "LocalDictate Studio 2.0 · v1.0.0",
+        studioTitle1: "Clean. Fast.",
+        studioTitle2: "100% on your machine.",
+        previewTabsLabel: "Interface Tabs",
+        zoomBtn: "Fullscreen",
+        lightboxPrev: "← Prev",
+        lightboxNext: "Next →",
+        lightboxClose: "Close",
+        tabStudio: "Dictation Studio",
+        tabStudioDesc: "Live waveform, raw vs refined diff stage, 7 quick modes, offline audio file drop, and default Air-Gapped Offline lock.",
+        tabHistory: "History & Snippets",
+        tabHistoryDesc: "Turkish accent-insensitive SQLite search (0.20 ms), time-saved KPIs, dynamic {{iso_date}} snippets, and .MD/.CSV export.",
+        tabSettings: "Settings & Telemetry",
+        tabSettingsDesc: "0 MB VRAM hardware telemetry, mic VU tester, global Toggle/PTT hotkeys, Whisper model cache, and local Ollama / LM Studio.",
+        studioCaptionPrefix: "Direct download for latest v1.0.0 ·",
+        studioCaptionLink: "All Packages (GitHub Releases)",
+        dockAria: "Scene Navigation",
+        dockIntro: "Overview",
+        dockSim: "Simulator",
+        dockStudio: "Studio UI",
+        shotAlts: [
+          "LocalDictate Studio 2.0 — Dictation Studio and Live Waveform",
+          "LocalDictate Studio 2.0 — History Search and Dynamic Snippets",
+          "LocalDictate Studio 2.0 — Hardware Telemetry, Hotkeys, and Local LLM Settings"
+        ]
+      }
+    };
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let activeLang = "tr";
+    let demoPaused = prefersReducedMotion;
+    const pauseBtn = document.getElementById('btn-demo-pause');
+
+    function getCookieLang() {
+      const m = document.cookie.match(/(?:^|;\s*)ld_lang=(tr|en)(?:;|$)/i);
+      return m ? m[1].toLowerCase() : null;
+    }
+
+    function detectClientLang() {
+      const path = window.location.pathname.replace(/\/+$/, "");
+      if (path === "/tr") return "tr";
+      if (path === "/en") return "en";
+
+      const params = new URLSearchParams(window.location.search);
+      const qLang = (params.get("lang") || "").toLowerCase();
+      if (qLang === "tr" || qLang === "en") return qLang;
+
+      try {
+        const stored = localStorage.getItem("ld_lang");
+        if (stored === "tr" || stored === "en") return stored;
+      } catch (_) {}
+
+      const cookieLang = getCookieLang();
+      if (cookieLang === "tr" || cookieLang === "en") return cookieLang;
+
+      if (window.__INITIAL_LANG__ === "tr" || window.__INITIAL_LANG__ === "en") {
+        return window.__INITIAL_LANG__;
+      }
+
+      const langs = Array.isArray(navigator.languages) && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || ""];
+      for (const raw of langs) {
+        const code = String(raw || "").toLowerCase();
+        if (code === "tr" || code.startsWith("tr-")) return "tr";
+        if (code === "en" || code.startsWith("en-")) return "en";
+      }
+      return "en";
+    }
+
+    function syncPauseButtonLabel() {
+      if (!pauseBtn) return;
+      const dict = I18N[activeLang] || I18N.en;
+      pauseBtn.textContent = demoPaused ? dict.playLabel : dict.pauseLabel;
+    }
+
+    function applyLanguage(lang, persist = false) {
+      const normalized = lang === "tr" ? "tr" : "en";
+      activeLang = normalized;
+      const dict = I18N[normalized];
+
+      document.documentElement.lang = normalized;
+      document.title = dict.pageTitle;
+      const descMeta = document.querySelector('meta[name="description"]');
+      if (descMeta) descMeta.setAttribute("content", dict.metaDescription);
+
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        const key = el.getAttribute("data-i18n");
+        if (key && Object.prototype.hasOwnProperty.call(dict, key)) {
+          el.textContent = dict[key];
+        }
+      });
+
+      const ariaMap = [
+        ["lang-switch", dict.langSwitchLabel],
+        ["brand-home-btn", dict.brandAria],
+        ["scenario-presets", dict.scenariosAria],
+        ["mode-chips", dict.modeChipsAria],
+        ["engine-switch", dict.engineSwitchAria],
+        ["preview-tablist", dict.previewTabsLabel],
+        ["bottom-dock", dict.dockAria]
+      ];
+      for (const [id, label] of ariaMap) {
+        const node = document.getElementById(id);
+        if (node) node.setAttribute("aria-label", label);
+      }
+
+      document.querySelectorAll(".studio-shot").forEach((img, idx) => {
+        if (dict.shotAlts && dict.shotAlts[idx]) {
+          img.setAttribute("alt", dict.shotAlts[idx]);
+        }
+      });
+
+      document.querySelectorAll(".lang-btn").forEach((btn) => {
+        const isSelected = btn.getAttribute("data-lang") === normalized;
+        btn.setAttribute("aria-pressed", String(isSelected));
+      });
+
+      syncPauseButtonLabel();
+      syncStudioMetaForLanguage();
+
+      if (persist) {
+        try { localStorage.setItem("ld_lang", normalized); } catch (_) {}
+        document.cookie = `ld_lang=${normalized}; path=/; max-age=31536000; SameSite=Lax`;
+
+        const currentPath = window.location.pathname.replace(/\/+$/, "");
+        if (currentPath === "/tr" || currentPath === "/en") {
+          window.history.replaceState(null, "", `/${normalized}`);
+        }
+      }
+    }
+
+    document.querySelectorAll(".lang-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetLang = btn.getAttribute("data-lang");
+        if (targetLang && targetLang !== activeLang) {
+          applyLanguage(targetLang, true);
+        }
+      });
+    });
+
+    /* GPU-composited electric violet cursor spotlight */
+    const cursorGlow = document.getElementById("cursor-glow");
+    if (cursorGlow && !prefersReducedMotion && window.matchMedia('(pointer: fine)').matches) {
+      let glowRaf = null;
+      let pointerX = -999;
+      let pointerY = -999;
+      window.addEventListener("pointermove", (e) => {
+        pointerX = e.clientX - 260;
+        pointerY = e.clientY - 260;
+        if (!glowRaf) {
+          glowRaf = requestAnimationFrame(() => {
+            cursorGlow.style.opacity = "1";
+            cursorGlow.style.transform = `translate3d(${pointerX}px, ${pointerY}px, 0)`;
+            glowRaf = null;
+          });
+        }
+      }, { passive: true });
+      document.addEventListener("pointerleave", () => {
+        cursorGlow.style.opacity = "0";
+      });
+    }
+
+    /* Animated ~359 ms latency count-up on initial load */
+    const latencyEl = document.getElementById("latency-counter");
+    if (latencyEl && !prefersReducedMotion) {
+      const targetMs = 359;
+      const startMs = 120;
+      const startTs = performance.now();
+      const duration = 740;
+      const tick = (now) => {
+        const progress = Math.min(1, (now - startTs) / duration);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        latencyEl.textContent = `~${Math.round(startMs + (targetMs - startMs) * eased)} ms`;
+        if (progress < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+
+    /* Platform-aware topbar download */
+    (function detectPlatformDownload() {
+      const topBtn = document.getElementById('topbar-download-btn');
+      if (!topBtn) return;
+      const ua = navigator.platform || navigator.userAgent;
+      const isMac = /Mac|iPhone|iPad/i.test(ua);
+      const isLinux = /Linux|X11/i.test(ua) && !/Android/i.test(navigator.userAgent || '');
+      if (isMac) {
+        topBtn.href = '/downloads/LocalDictate-macOS.dmg';
+        topBtn.setAttribute('download', 'LocalDictate-macOS.dmg');
+      } else if (isLinux) {
+        topBtn.href = '/downloads/LocalDictate-Linux.tar.gz';
+        topBtn.setAttribute('download', 'LocalDictate-Linux.tar.gz');
+      }
+    })();
+
+    /* 3-Scene Deck Navigation */
+    let currentScene = 0;
+    const totalScenes = 3;
+    let isTransitioning = false;
+    const studioLightbox = document.getElementById('studio-lightbox');
+
+    function goScene(index) {
+      if (index < 0 || index >= totalScenes || index === currentScene) return;
+      isTransitioning = true;
+      currentScene = index;
+      document.body.setAttribute('data-scene', String(currentScene));
+
+      for (let i = 0; i < totalScenes; i++) {
+        const el = document.getElementById('scene-' + i);
+        el.classList.remove('active', 'prev');
+        if (i === currentScene) {
+          el.classList.add('active');
+          el.removeAttribute('inert');
+        } else {
+          if (i < currentScene) el.classList.add('prev');
+          el.setAttribute('inert', '');
+        }
+      }
+
+      document.querySelectorAll('.dock-btn').forEach((b, i) => {
+        const isCurrent = i === currentScene;
+        b.classList.toggle('active', isCurrent);
+        if (isCurrent) b.setAttribute('aria-current', 'step');
+        else b.removeAttribute('aria-current');
+      });
+
+      document.querySelectorAll('.rail-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === currentScene);
+      });
+
+      setTimeout(() => { isTransitioning = false; }, 480);
+    }
+
+    document.getElementById('brand-home-btn')?.addEventListener('click', () => goScene(0));
+    document.getElementById('scroll-next-btn')?.addEventListener('click', () => goScene(1));
+    document.querySelectorAll('.dock-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        goScene(Number.parseInt(btn.getAttribute('data-scene-target') || '0', 10));
+      });
+    });
+    document.querySelectorAll('.rail-dot').forEach((dot) => {
+      dot.addEventListener('click', () => {
+        goScene(Number.parseInt(dot.getAttribute('data-rail-target') || '0', 10));
+      });
+    });
+
+    window.addEventListener('wheel', (e) => {
+      if (isTransitioning || studioLightbox?.open) return;
+      const activeSceneEl = document.getElementById('scene-' + currentScene);
+      if (activeSceneEl && activeSceneEl.scrollHeight > activeSceneEl.clientHeight + 8) {
+        const atTop = activeSceneEl.scrollTop <= 2;
+        const atBottom = activeSceneEl.scrollTop + activeSceneEl.clientHeight >= activeSceneEl.scrollHeight - 2;
+        if (e.deltaY > 0 && !atBottom) return;
+        if (e.deltaY < 0 && !atTop) return;
+      }
+      if (Math.abs(e.deltaY) < 18) return;
+      if (e.deltaY > 0 && currentScene < totalScenes - 1) goScene(currentScene + 1);
+      else if (e.deltaY < 0 && currentScene > 0) goScene(currentScene - 1);
+    }, { passive: true });
+
+    let touchStartY = 0;
+    window.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    window.addEventListener('touchend', (e) => {
+      if (isTransitioning || studioLightbox?.open || e.changedTouches.length === 0) return;
+      const activeSceneEl = document.getElementById('scene-' + currentScene);
+      if (activeSceneEl && activeSceneEl.scrollHeight > activeSceneEl.clientHeight + 8) {
+        const atTop = activeSceneEl.scrollTop <= 2;
+        const atBottom = activeSceneEl.scrollTop + activeSceneEl.clientHeight >= activeSceneEl.scrollHeight - 2;
+        const dy = touchStartY - e.changedTouches[0].clientY;
+        if (dy > 45 && !atBottom) return;
+        if (dy < -45 && !atTop) return;
+      }
+      const dy = touchStartY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) > 45) {
+        if (dy > 0 && currentScene < totalScenes - 1) goScene(currentScene + 1);
+        else if (dy < 0 && currentScene > 0) goScene(currentScene - 1);
+      }
+    }, { passive: true });
+
+    /* SCENE 1: Interactive Live Dictation & App-Aware Simulator */
+    const MODE_LABELS = {
+      clean: "Clean",
+      code: "Code",
+      formal: "Formal",
+      tr2en: "TR → EN"
+    };
+
+    const SCENARIOS = [
+      {
+        appWindow: "VS Code — worker.py",
+        defaultMode: "code",
+        langTag: "EN · 16 kHz",
+        wpm: "158 WPM · 3.5×",
+        latencyInt8: 359,
+        latencyLlm: 590,
+        rawSegments: [
+          { text: "um", filler: true },
+          { text: " hey team " },
+          { text: "comma", filler: true },
+          { text: " " },
+          { text: "new line", filler: true },
+          { text: " we migrated the websocket worker to asyncio and " },
+          { text: "uh", filler: true },
+          { text: " cut p95 latency below 40 milliseconds " },
+          { text: "period", filler: true }
+        ],
+        outputs: {
+          clean: {
+            int8: "Hey team, we migrated the websocket worker to asyncio and cut p95 latency below 40 milliseconds.",
+            llm: "Hey team, we migrated the WebSocket worker to asyncio and cut p95 latency below 40 ms."
+          },
+          code: {
+            int8: "Hey team,\nWe migrated the WebSocket worker to asyncio and cut p95 latency below 40 ms.",
+            llm: "Hey team,\nMigrated the WebSocket worker to `asyncio`, cutting p95 latency under 40 ms."
+          },
+          formal: {
+            int8: "Hello team, we migrated the WebSocket worker to asyncio and reduced p95 latency below 40 ms.",
+            llm: "Hi team,\nWe have completed migrating the WebSocket worker to asyncio, reducing p95 latency below 40 ms."
+          },
+          tr2en: {
+            int8: "Hey team,\nWe migrated the WebSocket worker to asyncio and cut p95 latency below 40 ms.",
+            llm: "Hey team,\nWe migrated the WebSocket worker to asyncio and brought p95 latency below 40 ms."
+          }
+        }
+      },
+      {
+        appWindow: "Gmail — Yeni İleti / Compose",
+        defaultMode: "formal",
+        langTag: "TR · 16 kHz",
+        wpm: "162 WPM · 3.6×",
+        latencyInt8: 348,
+        latencyLlm: 575,
+        rawSegments: [
+          { text: "eee", filler: true },
+          { text: " merhaba ahmet bey " },
+          { text: "virgül", filler: true },
+          { text: " " },
+          { text: "şey", filler: true },
+          { text: " yarın saat on dörtte mimari gözden geçirme toplantısı için müsait misiniz " },
+          { text: "soru işareti", filler: true }
+        ],
+        outputs: {
+          clean: {
+            int8: "Merhaba Ahmet Bey, yarın saat 14:00'te mimari gözden geçirme toplantısı için müsait misiniz?",
+            llm: "Merhaba Ahmet Bey, yarın 14:00'te mimari gözden geçirme toplantısı için müsait misiniz?"
+          },
+          code: {
+            int8: "// Sync: Mimari gözden geçirme toplantısı — yarın 14:00 (Ahmet Bey)",
+            llm: "// TODO(meeting): Architecture review with Ahmet Bey — tomorrow 14:00"
+          },
+          formal: {
+            int8: "Merhaba Ahmet Bey, yarın saat 14:00'te mimari gözden geçirme toplantısı için müsait misiniz?",
+            llm: "Sayın Ahmet Bey,\nYarın saat 14:00'te gerçekleştireceğimiz mimari gözden geçirme toplantısı için uygun musunuz?"
+          },
+          tr2en: {
+            int8: "Hello Ahmet Bey, are you available tomorrow at 14:00 for the architecture review meeting?",
+            llm: "Hi Ahmet, would you be available tomorrow at 2:00 PM for the architecture review meeting?"
+          }
+        }
+      },
+      {
+        appWindow: "Slack — #engineering",
+        defaultMode: "tr2en",
+        langTag: "TR→EN · 16 kHz",
+        wpm: "154 WPM · 3.5×",
+        latencyInt8: 364,
+        latencyLlm: 605,
+        rawSegments: [
+          { text: "şey", filler: true },
+          { text: " localdictate tamamen çevrimdışı çalışıyor " },
+          { text: "eee", filler: true },
+          { text: " ve sıfır megabayt ekran kartı belleği tüketiyor" }
+        ],
+        outputs: {
+          clean: {
+            int8: "LocalDictate tamamen çevrimdışı çalışıyor ve sıfır megabayt ekran kartı belleği tüketiyor.",
+            llm: "LocalDictate tamamen çevrimdışı çalışıyor ve 0 MB ekran kartı belleği (VRAM) tüketiyor."
+          },
+          code: {
+            int8: "// LocalDictate: 100% offline · 0 MB VRAM (faster-whisper INT8)",
+            llm: "`LocalDictate` runs 100% offline with `0 MB VRAM` overhead via `faster-whisper` INT8."
+          },
+          formal: {
+            int8: "LocalDictate tamamen çevrimdışı çalışmakta olup 0 MB GPU belleği kullanmaktadır.",
+            llm: "LocalDictate tamamen çevrimdışı ortamda çalışarak 0 MB GPU belleği (VRAM) tüketmektedir."
+          },
+          tr2en: {
+            int8: "LocalDictate runs 100% offline with zero MB VRAM overhead across Windows, macOS, and Linux.",
+            llm: "LocalDictate runs 100% air-gapped offline with 0 MB VRAM across Windows, macOS, and Linux."
+          }
+        }
+      }
+    ];
+
+    let activeScenarioIdx = 0;
+    let activeSimMode = "code";
+    let activeSimEngine = "int8";
+    let burstTimers = [];
+
+    const hudPill = document.getElementById('hud-pill');
+    const hudStatusText = document.getElementById('hud-status-text');
+    const hudModeBadge = document.getElementById('hud-mode-badge');
+    const simAppWindow = document.getElementById('sim-app-window');
+    const diffLangTag = document.getElementById('diff-lang-tag');
+    const diffWpm = document.getElementById('diff-wpm');
+    const diffRawEl = document.getElementById('diff-raw-text');
+    const diffRefinedEl = document.getElementById('diff-refined-text');
+    const diffRefinedPane = document.getElementById('diff-refined-pane');
+    const telState = document.getElementById('tel-state');
+    const pttBtn = document.getElementById('btn-sim-ptt');
+
+    function clearBurstTimers() {
+      for (const id of burstTimers) clearTimeout(id);
+      burstTimers = [];
+    }
+
+    function renderRawSegments(el, segments) {
+      if (!el) return;
+      el.textContent = '';
+      for (const seg of segments) {
+        if (seg.filler) {
+          const span = document.createElement('span');
+          span.className = 'filler-token';
+          span.textContent = seg.text;
+          el.appendChild(span);
+        } else {
+          el.appendChild(document.createTextNode(seg.text));
+        }
+      }
+    }
+
+    function renderRefinedText(el, text) {
+      if (!el) return;
+      el.textContent = '';
+      el.appendChild(document.createTextNode(text));
+      const caret = document.createElement('span');
+      caret.className = 'sim-caret';
+      caret.setAttribute('aria-hidden', 'true');
+      el.appendChild(caret);
+    }
+
+    function syncSimulatorControls() {
+      document.querySelectorAll('.preset-btn').forEach((btn, i) => {
+        btn.setAttribute('aria-pressed', String(i === activeScenarioIdx));
+      });
+      document.querySelectorAll('.mode-chip-btn').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(btn.getAttribute('data-mode') === activeSimMode));
+      });
+      document.querySelectorAll('#engine-switch .mode-btn').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(btn.getAttribute('data-engine') === activeSimEngine));
+      });
+    }
+
+    function renderSimulatorSnapshot(scenarioIdx, mode, engine, withBurst = false) {
+      clearBurstTimers();
+      activeScenarioIdx = scenarioIdx;
+      activeSimMode = mode;
+      activeSimEngine = engine;
+      syncSimulatorControls();
+
+      const item = SCENARIOS[activeScenarioIdx] || SCENARIOS[0];
+      const engineLabel = activeSimEngine === 'llm' ? 'INT8 + Ollama' : 'INT8';
+      const totalMs = activeSimEngine === 'llm' ? item.latencyLlm : item.latencyInt8;
+      const modeOut = item.outputs[activeSimMode] || item.outputs.clean;
+      const finalOutput = modeOut[activeSimEngine] || modeOut.int8;
+
+      if (simAppWindow) simAppWindow.textContent = item.appWindow;
+      if (diffLangTag) diffLangTag.textContent = item.langTag;
+      if (diffWpm) diffWpm.textContent = item.wpm;
+      if (hudModeBadge) hudModeBadge.textContent = `${MODE_LABELS[activeSimMode]} · ${engineLabel}`;
+
+      if (!withBurst || prefersReducedMotion) {
+        if (hudPill) hudPill.setAttribute('data-state', 'pasted');
+        if (hudStatusText) hudStatusText.textContent = 'PASTED';
+        if (telState) telState.textContent = `PASTED · ${totalMs} ms`;
+        if (pttBtn) pttBtn.classList.remove('recording');
+        renderRawSegments(diffRawEl, item.rawSegments);
+        renderRefinedText(diffRefinedEl, finalOutput);
+        return;
+      }
+
+      // Stage 1: REC burst
+      if (hudPill) hudPill.setAttribute('data-state', 'rec');
+      if (hudStatusText) hudStatusText.textContent = 'REC';
+      if (telState) telState.textContent = 'REC · 16 kHz';
+      if (pttBtn) pttBtn.classList.add('recording');
+      diffRawEl?.classList.add('changing');
+      diffRefinedEl?.classList.add('changing');
+
+      burstTimers.push(setTimeout(() => {
+        // Stage 2: TRANSCRIBING
+        if (hudPill) hudPill.setAttribute('data-state', 'transcribing');
+        if (hudStatusText) hudStatusText.textContent = 'TRANSCRIBING';
+        if (telState) telState.textContent = activeSimEngine === 'llm' ? 'STT + LLM' : 'STT 340 ms';
+        if (pttBtn) pttBtn.classList.remove('recording');
+        renderRawSegments(diffRawEl, item.rawSegments);
+        diffRawEl?.classList.remove('changing');
+      }, 480));
+
+      burstTimers.push(setTimeout(() => {
+        // Stage 3: PASTED
+        if (hudPill) hudPill.setAttribute('data-state', 'pasted');
+        if (hudStatusText) hudStatusText.textContent = 'PASTED';
+        if (telState) telState.textContent = `PASTED · ${totalMs} ms`;
+        renderRefinedText(diffRefinedEl, finalOutput);
+        diffRefinedEl?.classList.remove('changing');
+        if (diffRefinedPane) {
+          diffRefinedPane.classList.add('flash');
+          burstTimers.push(setTimeout(() => diffRefinedPane.classList.remove('flash'), 420));
+        }
+      }, 860));
+    }
+
+    document.querySelectorAll('.preset-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const idx = Number.parseInt(btn.getAttribute('data-scenario') || '0', 10);
+        const targetScenario = SCENARIOS[idx] || SCENARIOS[0];
+        renderSimulatorSnapshot(idx, targetScenario.defaultMode, activeSimEngine, true);
+      });
+    });
+
+    document.querySelectorAll('.mode-chip-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mode = btn.getAttribute('data-mode') || 'clean';
+        renderSimulatorSnapshot(activeScenarioIdx, mode, activeSimEngine, false);
+      });
+    });
+
+    document.querySelectorAll('#engine-switch .mode-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const eng = btn.getAttribute('data-engine') || 'int8';
+        renderSimulatorSnapshot(activeScenarioIdx, activeSimMode, eng, false);
+      });
+    });
+
+    pttBtn?.addEventListener('click', () => {
+      const nextIdx = (activeScenarioIdx + 1) % SCENARIOS.length;
+      renderSimulatorSnapshot(nextIdx, SCENARIOS[nextIdx].defaultMode, activeSimEngine, true);
+    });
+
+    pauseBtn?.addEventListener('click', () => {
+      demoPaused = !demoPaused;
+      syncPauseButtonLabel();
+    });
+
+    setInterval(() => {
+      if (demoPaused || currentScene !== 1) return;
+      const nextIdx = (activeScenarioIdx + 1) % SCENARIOS.length;
+      renderSimulatorSnapshot(nextIdx, SCENARIOS[nextIdx].defaultMode, activeSimEngine, true);
+    }, 4200);
+
+    /* SCENE 2: Interactive Studio 2.0 Showcase, Accurate Hotspots, 3D Tilt & Native Lightbox */
+    const STUDIO_TABS = [
+      {
+        img: "/assets/ui_preview.png?v=1.0.0",
+        title: { tr: "LocalDictate Studio · 1. Dikte Stüdyosu", en: "LocalDictate Studio · 1. Dictation Studio" },
+        pins: [
+          {
+            x: "53%",
+            y: "21%",
+            title: { tr: "Canlı Sahne & Uygulama Yönlendirme:", en: "App-Aware Live Stage & Waveform:" },
+            desc: {
+              tr: "Ön plandaki uygulamayı algılar (VS Code → Code), Silero VAD ve 310 ms INT8 STT ile ham/düzenli farkı canlı gösterir.",
+              en: "Detects your active app (VS Code → Code) with Silero VAD, 310 ms INT8 STT, live waveform, and raw-to-refined diff."
+            }
+          },
+          {
+            x: "81%",
+            y: "90%",
+            title: { tr: "7 Hızlı Mod & Hava Boşluklu Çevrimdışı Kilit:", en: "7 Quick Modes & Air-Gapped Offline Lock:" },
+            desc: {
+              tr: "Clean, Formal, Code, Git Commit veya TR→EN modları arasında geçiş yap; Air-Gapped kilidi dış ağ trafiğini engeller.",
+              en: "Switch across Clean, Formal, Code, Git Commit, or TR→EN while Air-Gapped Offline blocks non-localhost endpoints by default."
+            }
+          }
+        ]
+      },
+      {
+        img: "/assets/ui_preview_history.png?v=1.0.0",
+        title: { tr: "LocalDictate Studio · 2. Geçmiş & Kısaltmalar", en: "LocalDictate Studio · 2. History & Snippets" },
+        pins: [
+          {
+            x: "42%",
+            y: "21%",
+            title: { tr: "Türkçe Duyarsız Arama & SQLite Geçmişi:", en: "Turkish-Folded Search & SQLite History:" },
+            desc: {
+              tr: "1.200+ kayıtta 0.20 ms içinde Türkçe karakter duyarsız arama yap, WPM/gecikme verilerini gör ve .MD/.CSV dışa aktar.",
+              en: "Search 1,200+ dictations in 0.20 ms with Turkish accent folding, inspect WPM & latency KPIs, and export to .MD/.CSV."
+            }
+          },
+          {
+            x: "81%",
+            y: "56%",
+            title: { tr: "Kişisel Sözlük & Dinamik Kısaltmalar:", en: "Personal Dictionary & Dynamic Snippets:" },
+            desc: {
+              tr: "Whisper terim önyargısı ekle; lgtm, imzam veya {{iso_date}} / {{clipboard}} makrolarını 92 µs içinde genişlet.",
+              en: "Bias Whisper vocabulary and expand macros like lgtm, c++, {{iso_date}}, or {{clipboard}} in 92 µs with 1-click packs."
+            }
+          }
+        ]
+      },
+      {
+        img: "/assets/ui_preview_settings.png?v=1.0.0",
+        title: { tr: "LocalDictate Studio · 3. Ayarlar & Telemetri", en: "LocalDictate Studio · 3. Settings & Telemetry" },
+        pins: [
+          {
+            x: "48%",
+            y: "16%",
+            title: { tr: "Canlı Donanım Telemetrisi · 0 MB VRAM:", en: "Live Hardware Telemetry · 0 MB VRAM:" },
+            desc: {
+              tr: "CPU çekirdek/ISA profilini otomatik algılar; CTranslate2 INT8 + Silero VAD ile ekran kartına sıfır yük bindirir.",
+              en: "Auto-detects CPU cores & ISA extensions to run CTranslate2 INT8 + Silero VAD with zero GPU/VRAM contention."
+            }
+          },
+          {
+            x: "79%",
+            y: "84%",
+            title: { tr: "Yerel Ollama / LM Studio & Global Kısayollar:", en: "Local Ollama / LM Studio & Global Hotkeys:" },
+            desc: {
+              tr: "İsteğe bağlı yerel LLM düzenlemesini localhost üzerinden aç, Toggle/PTT kısayollarını ve pano geri yüklemeyi ayarla.",
+              en: "Enable optional localhost Ollama or LM Studio polishing alongside system-wide Toggle/PTT hotkeys and clipboard restore."
+            }
+          }
+        ]
+      }
+    ];
+
+    let activeStudioTab = 0;
+    let activePinIdx = 0;
+
+    function renderStudioHotspot(pinIdx) {
+      const tab = STUDIO_TABS[activeStudioTab];
+      if (!tab) return;
+      activePinIdx = pinIdx;
+      const pinData = tab.pins[pinIdx] || tab.pins[0];
+      const lang = activeLang === "tr" ? "tr" : "en";
+
+      const numEl = document.getElementById("callout-num");
+      const titleEl = document.getElementById("callout-title");
+      const descEl = document.getElementById("callout-desc");
+      if (numEl) numEl.textContent = String(pinIdx + 1);
+      if (titleEl) titleEl.textContent = pinData.title[lang];
+      if (descEl) descEl.textContent = pinData.desc[lang];
+
+      document.querySelectorAll(".hotspot-pin").forEach((el, i) => {
+        el.setAttribute("aria-pressed", String(i === pinIdx));
+      });
+    }
+
+    function syncStudioMetaForLanguage() {
+      const tab = STUDIO_TABS[activeStudioTab];
+      if (!tab) return;
+      const lang = activeLang === "tr" ? "tr" : "en";
+      const winTitle = document.getElementById("window-title-text");
+      const lbTitle = document.getElementById("lightbox-title");
+      if (winTitle) winTitle.textContent = tab.title[lang];
+      if (lbTitle) lbTitle.textContent = tab.title[lang];
+      document.querySelectorAll(".hotspot-pin").forEach((pinEl, i) => {
+        const cfg = tab.pins[i];
+        if (cfg && cfg.title[lang]) {
+          pinEl.setAttribute("aria-label", `${i + 1}. ${cfg.title[lang].replace(/:$/, "")}`);
+        }
+      });
+      renderStudioHotspot(activePinIdx);
+    }
+
+    const tabButtons = Array.from(document.querySelectorAll('#preview-tablist [role="tab"]'));
+    const studioPanel = document.getElementById('studio-tabpanel');
+
+    function switchPreviewTab(tabIdx, focusTab = false) {
+      const tab = STUDIO_TABS[tabIdx];
+      if (!tab) return;
+      activeStudioTab = tabIdx;
+      activePinIdx = 0;
+
+      document.querySelectorAll('.studio-shot').forEach((shot, i) => {
+        const isCurrent = i === tabIdx;
+        shot.hidden = !isCurrent;
+        shot.classList.toggle('active', isCurrent);
+      });
+
+      const lbImg = document.getElementById('lightbox-img');
+      if (lbImg) {
+        lbImg.src = tab.img;
+        const dict = I18N[activeLang] || I18N.en;
+        if (dict.shotAlts && dict.shotAlts[tabIdx]) {
+          lbImg.alt = dict.shotAlts[tabIdx];
+        }
+      }
+
+      tabButtons.forEach((card, i) => {
+        const active = i === tabIdx;
+        card.setAttribute('aria-selected', String(active));
+        card.setAttribute('tabindex', active ? '0' : '-1');
+      });
+
+      if (studioPanel && tabButtons[tabIdx]) {
+        studioPanel.setAttribute('aria-labelledby', tabButtons[tabIdx].id);
+      }
+
+      document.querySelectorAll('.hotspot-pin').forEach((pinEl, i) => {
+        const cfg = tab.pins[i];
+        if (!cfg) return;
+        pinEl.style.setProperty('--x', cfg.x);
+        pinEl.style.setProperty('--y', cfg.y);
+      });
+
+      syncStudioMetaForLanguage();
+      if (focusTab && tabButtons[tabIdx]) tabButtons[tabIdx].focus();
+    }
+
+    tabButtons.forEach((card) => {
+      card.addEventListener('click', () => {
+        switchPreviewTab(Number.parseInt(card.getAttribute('data-tab') || '0', 10), false);
+      });
+      card.addEventListener('keydown', (e) => {
+        const cur = Number.parseInt(card.getAttribute('data-tab') || '0', 10);
+        if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          switchPreviewTab((cur + 1) % tabButtons.length, true);
+        } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          switchPreviewTab((cur + tabButtons.length - 1) % tabButtons.length, true);
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          switchPreviewTab(0, true);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          switchPreviewTab(tabButtons.length - 1, true);
+        }
+      });
+    });
+
+    document.querySelectorAll('.hotspot-pin').forEach((pinEl) => {
+      const idx = Number.parseInt(pinEl.getAttribute('data-pin') || '0', 10);
+      pinEl.addEventListener('click', () => renderStudioHotspot(idx));
+      pinEl.addEventListener('mouseenter', () => renderStudioHotspot(idx));
+    });
+
+    /* Native Dialog Lightbox with Top-Layer Exit Fallback & closedby Fallback */
+    let supportsDisplayTransition;
+    function canTransitionDisplay() {
+      if (supportsDisplayTransition !== undefined) return supportsDisplayTransition;
+      if (!window.CSS?.supports?.('transition-behavior', 'allow-discrete') || !document.body) {
+        return false;
+      }
+      const probe = document.createElement('div');
+      probe.style.cssText = 'transition: display 1s allow-discrete !important; display: block;';
+      document.body.appendChild(probe);
+      getComputedStyle(probe).display;
+      probe.style.display = 'none';
+      supportsDisplayTransition = getComputedStyle(probe).display === 'block';
+      probe.remove();
+      return supportsDisplayTransition;
+    }
+
+    function supportsTopLayerExit() {
+      return window.CSS?.supports?.('overlay', 'auto') && canTransitionDisplay();
+    }
+
+    async function closeTopLayer(dialogEl) {
+      if (!dialogEl || !dialogEl.open) return;
+      if (!supportsTopLayerExit()) {
+        dialogEl.setAttribute('data-closing', '');
+        const animations = dialogEl.getAnimations({ subtree: true });
+        if (animations.length > 0) {
+          await Promise.race([
+            Promise.allSettled(animations.map((a) => a.finished)),
+            new Promise((r) => setTimeout(r, 600))
+          ]);
+        }
+        if (!dialogEl.hasAttribute('data-closing')) return;
+        dialogEl.removeAttribute('data-closing');
+      }
+      dialogEl.close();
+    }
+
+    function openLightbox() {
+      if (!studioLightbox || studioLightbox.open) return;
+      const tab = STUDIO_TABS[activeStudioTab];
+      const lbImg = document.getElementById('lightbox-img');
+      if (lbImg && tab) {
+        lbImg.src = tab.img;
+        const dict = I18N[activeLang] || I18N.en;
+        if (dict.shotAlts && dict.shotAlts[activeStudioTab]) {
+          lbImg.alt = dict.shotAlts[activeStudioTab];
+        }
+      }
+      syncStudioMetaForLanguage();
+      studioLightbox.showModal();
+    }
+
+    document.getElementById('btn-open-lightbox')?.addEventListener('click', openLightbox);
+    document.querySelectorAll('.studio-shot').forEach((shot) => {
+      shot.addEventListener('click', openLightbox);
+    });
+    document.getElementById('lightbox-close')?.addEventListener('click', () => closeTopLayer(studioLightbox));
+    document.getElementById('lightbox-prev')?.addEventListener('click', () => {
+      switchPreviewTab((activeStudioTab + STUDIO_TABS.length - 1) % STUDIO_TABS.length, false);
+    });
+    document.getElementById('lightbox-next')?.addEventListener('click', () => {
+      switchPreviewTab((activeStudioTab + 1) % STUDIO_TABS.length, false);
+    });
+
+    studioLightbox?.addEventListener('close', () => {
+      studioLightbox.returnValue = '';
+    });
+
+    studioLightbox?.addEventListener('cancel', (e) => {
+      if (!supportsTopLayerExit()) {
+        e.preventDefault();
+        closeTopLayer(studioLightbox);
+      }
+    });
+
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      const outside = (e, dialog) => {
+        const r = dialog.getBoundingClientRect();
+        return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+      };
+      for (const dialog of document.querySelectorAll('dialog[closedby="any"]')) {
+        let pressedOutside = false;
+        dialog.addEventListener('pointerdown', (e) => {
+          pressedOutside = outside(e, dialog);
+        });
+        dialog.addEventListener('pointerup', (e) => {
+          if (pressedOutside && outside(e, dialog)) {
+            closeTopLayer(dialog);
+          }
+          pressedOutside = false;
+        });
+      }
+    }
+
+    /* Global Keyboard Navigation + Scene 1 Space Hold-to-Talk Trigger */
+    window.addEventListener('keydown', (e) => {
+      if (studioLightbox?.open) {
+        if (e.key === 'ArrowLeft') {
+          switchPreviewTab((activeStudioTab + STUDIO_TABS.length - 1) % STUDIO_TABS.length, false);
+        } else if (e.key === 'ArrowRight') {
+          switchPreviewTab((activeStudioTab + 1) % STUDIO_TABS.length, false);
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+        if (document.activeElement?.getAttribute('role') === 'tab') return;
+        if (currentScene < totalScenes - 1) goScene(currentScene + 1);
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        if (document.activeElement?.getAttribute('role') === 'tab') return;
+        if (currentScene > 0) goScene(currentScene - 1);
+      } else if (currentScene === 1 && (e.code === 'Space' || e.key === ' ')) {
+        const tag = (document.activeElement?.tagName || '').toLowerCase();
+        if (tag === 'button' || tag === 'a' || tag === 'input' || tag === 'textarea') return;
+        e.preventDefault();
+        const nextIdx = (activeScenarioIdx + 1) % SCENARIOS.length;
+        renderSimulatorSnapshot(nextIdx, SCENARIOS[nextIdx].defaultMode, activeSimEngine, true);
+      }
+    });
+
+    /* Subtle 3D Perspective Tilt on Studio Showcase Card */
+    const tiltCard = document.getElementById('studio-tilt-card');
+    if (tiltCard && !prefersReducedMotion && window.matchMedia('(pointer: fine)').matches) {
+      tiltCard.addEventListener('pointermove', (e) => {
+        const rect = tiltCard.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width - 0.5;
+        const y = (e.clientY - rect.top) / rect.height - 0.5;
+        tiltCard.style.transform = `rotateX(${(-y * 4.5).toFixed(2)}deg) rotateY(${(x * 5.5).toFixed(2)}deg)`;
+      });
+      tiltCard.addEventListener('pointerleave', () => {
+        tiltCard.style.transform = 'rotateX(0deg) rotateY(0deg)';
+      });
+    }
+
+    /* Initial Hydration */
+    renderSimulatorSnapshot(0, SCENARIOS[0].defaultMode, 'int8', false);
+    switchPreviewTab(0, false);
+    applyLanguage(detectClientLang(), false);
+  </script>
+</body>
+</html>

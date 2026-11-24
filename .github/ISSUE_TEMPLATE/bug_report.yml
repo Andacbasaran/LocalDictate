@@ -1,0 +1,53 @@
+name: Bug Report
+description: Report a crash, hotkey issue, audio problem, or paste bug in LocalDictate
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "Thanks for reporting a bug! Please include your OS, microphone/display server details, and steps to reproduce."
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - Windows 11 (x64)
+        - Windows 10 (x64)
+        - macOS Apple Silicon (M1/M2/M3/M4)
+        - macOS Intel (x86_64)
+        - Linux (X11)
+        - Linux (Wayland)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: LocalDictate Version
+      placeholder: "e.g. v1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: target_app
+    attributes:
+      label: Target Application / Microphone
+      placeholder: "e.g. VS Code, Slack, Bluetooth headset (48 kHz)"
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug clearly, including expected vs actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open LocalDictate Studio
+        2. Press hotkey ...
+        3. Observe ...
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant crash.log or console output
+      render: text

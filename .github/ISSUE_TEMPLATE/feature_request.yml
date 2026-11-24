@@ -1,0 +1,24 @@
+name: Feature Request
+description: Suggest a new dictation mode, platform improvement, or workflow feature
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Workflow Need
+      description: What dictation workflow are you trying to improve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe how you envision this feature working inside LocalDictate Studio.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Additional Context or Examples
+      description: Links, screenshots, or examples from other tools.

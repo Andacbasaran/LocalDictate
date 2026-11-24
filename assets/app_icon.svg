@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Matte Obsidian Flat Tile (Studio Graphite Brand Language) -->
+  <rect x="12" y="12" width="488" height="488" rx="114" fill="#111114" stroke="#27272E" stroke-width="6"/>
+
+  <!-- Geometric Voice Waveform Bars -->
+  <rect x="108" y="212" width="28" height="88" rx="14" fill="#52525B"/>
+  <rect x="156" y="152" width="32" height="208" rx="16" fill="#FAFAFA"/>
+  <rect x="208" y="118" width="36" height="276" rx="18" fill="#8B5CF6"/>
+  <rect x="264" y="170" width="32" height="172" rx="16" fill="#FAFAFA"/>
+
+  <!-- Dictated Text Track & Live Cursor Caret -->
+  <rect x="324" y="206" width="74" height="24" rx="12" fill="#3F3F46"/>
+  <rect x="324" y="248" width="54" height="24" rx="12" fill="#A1A1AA"/>
+  <rect x="392" y="242" width="16" height="68" rx="8" fill="#8B5CF6"/>
+
+  <!-- Emerald 100% Offline Beacon -->
+  <circle cx="335" cy="301" r="11" fill="#10B981"/>
+</svg>

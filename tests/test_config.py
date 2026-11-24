@@ -3,19 +3,22 @@
 from pathlib import Path
 
 from localdictate.config import AppConfig, load_config, save_config
+from localdictate.platform_utils import get_default_hotkeys
 
 
 def test_default_config_values():
+    expected_toggle, expected_ptt = get_default_hotkeys()
     cfg = AppConfig()
     assert cfg.hotkey_mode == "toggle"
-    assert cfg.toggle_hotkey == "ctrl+alt+space"
-    assert cfg.ptt_hotkey == "ctrl_r"
+    assert cfg.toggle_hotkey == expected_toggle
+    assert cfg.ptt_hotkey == expected_ptt
     assert cfg.model_size == "small"
     assert cfg.compute_type == "int8"
-    assert cfg.active_hotkey == "ctrl+alt+space"
+    assert cfg.offline_only is True
+    assert cfg.active_hotkey == expected_toggle
 
     cfg.hotkey_mode = "push_to_talk"
-    assert cfg.active_hotkey == "ctrl_r"
+    assert cfg.active_hotkey == expected_ptt
 
 
 def test_save_and_load_roundtrip(tmp_path: Path):

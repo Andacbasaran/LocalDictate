@@ -8,18 +8,25 @@ ENV/
 env/
 build/
 dist/
+release_out/
 *.egg-info/
 .pytest_cache/
+.ruff_cache/
 
-# Models & local data
+# Models & local user data
 models/
 *.onnx
 *.bin
 *.sqlite
 *.db
+crash.log
 
 # IDE / OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+.wrangler/
+website/.wrangler/
+*.spec
+benchmark_results.json

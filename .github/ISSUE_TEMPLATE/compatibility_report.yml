@@ -1,0 +1,39 @@
+name: Compatibility Report
+description: Report how LocalDictate performs on your OS, desktop environment, app, or microphone
+title: "[Compat]: "
+labels: ["compatibility"]
+body:
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System & Session
+      options:
+        - Windows 11 (x64)
+        - Windows 10 (x64)
+        - macOS Apple Silicon (arm64)
+        - Linux X11
+        - Linux Wayland (GNOME / KDE / Sway / Hyprland)
+    validations:
+      required: true
+  - type: input
+    id: app_tested
+    attributes:
+      label: Target App(s) & Audio Device Tested
+      placeholder: "e.g. Cursor, Slack, Alacritty + AirPods Pro"
+    validations:
+      required: true
+  - type: dropdown
+    id: status
+    attributes:
+      label: Result
+      options:
+        - Full Support (Hotkey + Auto-Paste + App-Aware Routing work)
+        - Partial Support (Clipboard works, manual paste needed)
+        - Issue Found
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes & Latency Observations
+      placeholder: "Whisper model used, CPU, approximate latency..."

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Official Website & Documentation
+    url: https://localdictate.andacbasaran.com
+    about: Download installers, guides, and quick-start tips for Windows, macOS, and Linux.
+  - name: Compatibility Matrix
+    url: https://github.com/Andacbasaran/LocalDictate/blob/main/COMPATIBILITY.md
+    about: Check supported OS sessions, terminals, and microphone setups before opening an issue.

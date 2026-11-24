@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=LocalDictate
+GenericName=Offline Voice Dictation Studio
+Comment=100% offline, 0 MB VRAM desktop AI speech-to-text dictation studio
+Comment[tr]=%100 çevrimdışı, 0 MB VRAM masaüstü yapay zeka sesli dikte stüdyosu
+Exec=LocalDictate
+Icon=localdictate
+Terminal=false
+Categories=AudioVideo;Utility;Office;
+Keywords=dictation;whisper;speech;voice;offline;stt;turkish;
+StartupWMClass=LocalDictate
+StartupNotify=true

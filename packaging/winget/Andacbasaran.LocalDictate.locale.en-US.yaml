@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: Andacbasaran.LocalDictate
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: Andac Basaran
+PublisherUrl: https://localdictate.andacbasaran.com
+PublisherSupportUrl: https://github.com/Andacbasaran/LocalDictate/issues
+PackageName: LocalDictate
+PackageUrl: https://localdictate.andacbasaran.com
+License: MIT
+LicenseUrl: https://github.com/Andacbasaran/LocalDictate/blob/main/LICENSE
+ShortDescription: 100% offline, 0 MB VRAM desktop AI voice dictation studio powered by faster-whisper INT8.
+Description: >-
+  LocalDictate turns your voice into cleanly formatted text inside any desktop app—VS Code,
+  Slack, Notion, Mail, or browsers—completely offline with 0 MB VRAM using faster-whisper
+  INT8, Silero VAD, App-Aware Mode Routing, dynamic snippets, Voice-to-Translate, and
+  optional local Ollama or LM Studio refinement.
+Tags:
+  - dictation
+  - speech-to-text
+  - whisper
+  - voice-typing
+  - offline
+  - ai
+  - productivity
+  - ollama
+ReleaseNotesUrl: https://github.com/Andacbasaran/LocalDictate/releases/tag/v1.0.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

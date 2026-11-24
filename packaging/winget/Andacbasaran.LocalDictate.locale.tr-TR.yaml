@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.locale.1.6.0.schema.json
+PackageIdentifier: Andacbasaran.LocalDictate
+PackageVersion: 1.0.0
+PackageLocale: tr-TR
+Publisher: Andac Basaran
+PublisherUrl: https://localdictate.andacbasaran.com
+PublisherSupportUrl: https://github.com/Andacbasaran/LocalDictate/issues
+PackageName: LocalDictate
+PackageUrl: https://localdictate.andacbasaran.com
+License: MIT
+LicenseUrl: https://github.com/Andacbasaran/LocalDictate/blob/main/LICENSE
+ShortDescription: %100 çevrimdışı, 0 MB VRAM masaüstü yapay zeka sesli dikte stüdyosu (faster-whisper INT8).
+Description: >-
+  LocalDictate, sesinizi VS Code, Slack, Notion, Mail ve tüm masaüstü uygulamalarda
+  anında yazıya dönüştürür. faster-whisper INT8 ve Silero VAD ile 0 MB VRAM kullanarak
+  tamamen çevrimdışı çalışır; Uygulama Bazlı Mod, dinamik kısaltmalar, TR→EN sesli çeviri
+  ve isteğe bağlı yerel Ollama / LM Studio desteği sunar.
+ReleaseNotesUrl: https://github.com/Andacbasaran/LocalDictate/releases/tag/v1.0.0
+ManifestType: locale
+ManifestVersion: 1.6.0
