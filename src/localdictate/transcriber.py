@@ -18,6 +18,7 @@ from .hardware import (
     HardwareProfile,
     compute_runtime_tuning,
     detect_hardware_profile,
+    get_ct2_safe_path,
     select_compute_type_candidates,
 )
 
@@ -113,6 +114,7 @@ class WhisperTranscriber:
         performance_profile: str = "auto",
         hw_profile: Optional[HardwareProfile] = None,
         local_files_only: bool = False,
+        offline_only: bool = False,
     ) -> None:
         self.model_size = model_size
         self.compute_type = compute_type
@@ -122,12 +124,14 @@ class WhisperTranscriber:
         self.performance_profile = performance_profile
         self._hw_profile = hw_profile
         self.local_files_only = local_files_only
+        self.offline_only = offline_only
 
         self._model: WhisperModel | None = None
         self._lock = threading.Lock()
-        self._loaded_key: tuple[str, str, int] | None = None
+        self._loaded_key: tuple[str, str, int, bool] | None = None
         self._active_compute_type: str = compute_type
         self._active_threads: int = cpu_threads
+        self._active_beam_size: int = beam_size
         self._active_backend: str = "faster-whisper"
 
     @property
@@ -146,7 +150,7 @@ class WhisperTranscriber:
     def active_backend(self) -> str:
         return self._active_backend
 
-    def _resolve_tuning(self) -> tuple[int, tuple[str, ...]]:
+    def _resolve_tuning(self) -> tuple[int, int, tuple[str, ...]]:
         hw = self._hw_profile or detect_hardware_profile(query_ct2=True)
         self._hw_profile = hw
         tuning = compute_runtime_tuning(
@@ -155,39 +159,70 @@ class WhisperTranscriber:
             preferred_compute_type=self.compute_type,
         )
         threads = self.cpu_threads if self.cpu_threads > 0 else tuning.whisper_threads
+        # Honor Eco profile reduced beam size when user kept the default beam_size (5)
+        effective_beam = (
+            min(self.beam_size, tuning.beam_size) if self.beam_size == 5 else max(1, self.beam_size)
+        )
         candidates = select_compute_type_candidates(
             hw.supported_ct2_types,
             preferred=self.compute_type,
         )
-        return threads, candidates
+        return threads, effective_beam, candidates
+
+    def _effective_local_files_only(self) -> bool:
+        if self.local_files_only:
+            return True
+        if is_model_cached(self.model_size):
+            return True
+        return bool(self.offline_only)
+
+    def _resolve_safe_model_ref(self, local_only: bool) -> str:
+        """Resolve local model snapshot via get_ct2_safe_path() to avoid Windows Unicode CT2 issues."""
+        if os.path.isdir(self.model_size):
+            return get_ct2_safe_path(self.model_size)
+        try:
+            from faster_whisper.utils import download_model
+
+            resolved = download_model(self.model_size, local_files_only=local_only)
+            if resolved and os.path.isdir(resolved):
+                return get_ct2_safe_path(resolved)
+        except Exception:
+            if local_only:
+                raise
+        return self.model_size
 
     def load(self) -> None:
         """Load (or reload) the Whisper model into RAM with safe compute_type fallback."""
-        threads, candidates = self._resolve_tuning()
-        target_key = (self.model_size, self.compute_type, threads)
+        threads, effective_beam, candidates = self._resolve_tuning()
+        local_only = self._effective_local_files_only()
+        target_key = (self.model_size, self.compute_type, threads, local_only)
         with self._lock:
             if self._model is not None and self._loaded_key == target_key:
+                self._active_beam_size = effective_beam
                 return
 
+            model_ref = self._resolve_safe_model_ref(local_only)
             last_exc: Exception | None = None
             for ctype in candidates:
                 logger.info(
-                    "Loading faster-whisper model=%s compute_type=%s cpu_threads=%s",
+                    "Loading faster-whisper model=%s compute_type=%s cpu_threads=%s local_only=%s",
                     self.model_size,
                     ctype,
                     threads,
+                    local_only,
                 )
                 t0 = time.perf_counter()
                 try:
                     self._model = WhisperModel(
-                        self.model_size,
+                        model_ref,
                         device="cpu",
                         compute_type=ctype,
                         cpu_threads=threads,
-                        local_files_only=self.local_files_only,
+                        local_files_only=local_only,
                     )
                     self._active_compute_type = ctype
                     self._active_threads = threads
+                    self._active_beam_size = effective_beam
                     self._active_backend = "faster-whisper"
                     self._loaded_key = target_key
                     logger.info(
@@ -219,6 +254,7 @@ class WhisperTranscriber:
         vad_filter: bool = True,
         beam_size: int = 5,
         performance_profile: str = "auto",
+        offline_only: Optional[bool] = None,
     ) -> bool:
         """Update settings. Returns True if the model needs to be reloaded."""
         needs_reload = (
@@ -227,14 +263,16 @@ class WhisperTranscriber:
             or cpu_threads != self.cpu_threads
             or performance_profile != self.performance_profile
         )
-        self.model_size = model_size
-        self.compute_type = compute_type
-        self.cpu_threads = cpu_threads
-        self.vad_filter = vad_filter
-        self.beam_size = beam_size
-        self.performance_profile = performance_profile
-        if needs_reload:
-            with self._lock:
+        with self._lock:
+            self.model_size = model_size
+            self.compute_type = compute_type
+            self.cpu_threads = cpu_threads
+            self.vad_filter = vad_filter
+            self.beam_size = beam_size
+            self.performance_profile = performance_profile
+            if offline_only is not None:
+                self.offline_only = bool(offline_only)
+            if needs_reload:
                 self._model = None
                 self._loaded_key = None
         return needs_reload
@@ -270,27 +308,30 @@ class WhisperTranscriber:
                 backend=self._active_backend,
             )
 
-        if self._model is None:
-            self.load()
-
         lang_arg = None if not language or language == "auto" else language
         task_arg = "translate" if task == "translate" else "transcribe"
 
         t0 = time.perf_counter()
-        with self._lock:
-            assert self._model is not None
-            segments, info = self._model.transcribe(
-                audio,
-                language=lang_arg,
-                task=task_arg,
-                initial_prompt=initial_prompt or None,
-                beam_size=self.beam_size,
-                vad_filter=self.vad_filter,
-                vad_parameters={"min_silence_duration_ms": 400},
-                condition_on_previous_text=False,
-                without_timestamps=True,
-            )
-            parts = [seg.text.strip() for seg in segments if seg.text and seg.text.strip()]
+        while True:
+            with self._lock:
+                model = self._model
+                beam = self._active_beam_size or self.beam_size
+                vad = self.vad_filter
+                if model is not None:
+                    segments, info = model.transcribe(
+                        audio,
+                        language=lang_arg,
+                        task=task_arg,
+                        initial_prompt=initial_prompt or None,
+                        beam_size=beam,
+                        vad_filter=vad,
+                        vad_parameters={"min_silence_duration_ms": 400},
+                        condition_on_previous_text=False,
+                        without_timestamps=True,
+                    )
+                    parts = [seg.text.strip() for seg in segments if seg.text and seg.text.strip()]
+                    break
+            self.load()
         inference_sec = time.perf_counter() - t0
 
         text = " ".join(parts).strip()

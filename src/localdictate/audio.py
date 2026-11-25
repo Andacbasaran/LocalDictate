@@ -146,6 +146,15 @@ def load_audio_file(path: Path | str, target_sr: int = SAMPLE_RATE) -> tuple[np.
                 for of in out_frames:
                     arr = of.to_ndarray()
                     chunks.append(arr.reshape(-1).astype(np.float32, copy=False))
+            # Flush buffered samples from the resampler at EOF to avoid truncating trailing audio
+            flushed = resampler.resample(None)
+            if flushed:
+                if not isinstance(flushed, list):
+                    flushed = [flushed]
+                for of in flushed:
+                    arr = of.to_ndarray()
+                    if arr.size > 0:
+                        chunks.append(arr.reshape(-1).astype(np.float32, copy=False))
         if not chunks:
             return np.zeros(0, dtype=np.float32), 0.0
         audio = np.concatenate(chunks, axis=0)
@@ -197,6 +206,7 @@ class AudioRecorder:
         self._chunks: list[np.ndarray] = []
         self._stream: sd.InputStream | None = None
         self._recording = False
+        self._starting = False
         self._capture_sr: int = SAMPLE_RATE
         self._record_start_mono: float = 0.0
         self._has_heard_speech: bool = False
@@ -210,11 +220,12 @@ class AudioRecorder:
     @property
     def is_recording(self) -> bool:
         with self._lock:
-            return self._recording
+            return self._recording or self._starting
 
     @property
     def capture_sample_rate(self) -> int:
-        return self._capture_sr
+        with self._lock:
+            return self._capture_sr
 
     def get_latest_level(self) -> float:
         """Read the latest perceptual RMS level [0.0, 1.0] safely from any thread."""
@@ -228,11 +239,27 @@ class AudioRecorder:
             return vals[-bars:]
         return ([0.0] * (bars - len(vals))) + vals
 
+    @staticmethod
+    def _close_stream(stream: sd.InputStream | None) -> None:
+        """Stop and close a PortAudio stream, guaranteeing stream.close() runs even if stop() fails."""
+        if stream is None:
+            return
+        try:
+            stream.stop()
+        except Exception:
+            logger.debug("Error stopping PortAudio input stream", exc_info=True)
+        finally:
+            try:
+                stream.close()
+            except Exception:
+                logger.debug("Error closing PortAudio input stream", exc_info=True)
+
     def start(self) -> None:
         """Start capturing microphone audio, negotiating device-native sample rate if needed."""
         with self._lock:
-            if self._recording:
+            if self._recording or self._starting:
                 return
+            self._starting = True
             self._chunks = []
             self._latest_level = 0.0
             self._level_history.clear()
@@ -241,58 +268,88 @@ class AudioRecorder:
             self._auto_stop_triggered = False
 
         last_exc: Exception | None = None
-        stream: sd.InputStream | None = None
+        started_stream: sd.InputStream | None = None
         chosen_sr = SAMPLE_RATE
 
-        for sr in _candidate_sample_rates(self.device):
-            blocksize = max(256, int(round(sr * BLOCK_MS / 1000.0)))
-            try:
-                stream = sd.InputStream(
-                    samplerate=sr,
-                    channels=CHANNELS,
-                    dtype="float32",
-                    blocksize=blocksize,
-                    device=self.device,
-                    callback=self._audio_callback,
-                )
-                stream.start()
-                chosen_sr = sr
-                break
-            except Exception as exc:
-                last_exc = exc
-                if stream is not None:
-                    try:
-                        stream.close()
-                    except Exception:
-                        pass
-                    stream = None
+        try:
+            for sr in _candidate_sample_rates(self.device):
+                blocksize = max(256, int(round(sr * BLOCK_MS / 1000.0)))
+                candidate_stream: sd.InputStream | None = None
+                try:
+                    candidate_stream = sd.InputStream(
+                        samplerate=sr,
+                        channels=CHANNELS,
+                        dtype="float32",
+                        blocksize=blocksize,
+                        device=self.device,
+                        callback=self._audio_callback,
+                    )
+                    now = time.monotonic()
+                    with self._lock:
+                        if not self._starting:
+                            # stop() or cancel() was called while opening the stream
+                            aborted = True
+                        else:
+                            aborted = False
+                            self._stream = candidate_stream
+                            self._capture_sr = sr
+                            self._record_start_mono = now
+                            self._last_speech_mono = now
+                            # Set _recording=True BEFORE stream.start() so initial frames are not dropped
+                            self._recording = True
+                    if aborted:
+                        self._close_stream(candidate_stream)
+                        return
 
-        if stream is None:
-            raise RuntimeError(f"Could not open microphone stream: {last_exc}") from last_exc
+                    candidate_stream.start()
+                    started_stream = candidate_stream
+                    chosen_sr = sr
+                    break
+                except Exception as exc:
+                    last_exc = exc
+                    with self._lock:
+                        if self._stream is candidate_stream:
+                            self._stream = None
+                        self._recording = False
+                    if candidate_stream is not None:
+                        self._close_stream(candidate_stream)
 
-        now = time.monotonic()
-        with self._lock:
-            self._stream = stream
-            self._capture_sr = chosen_sr
-            self._record_start_mono = now
-            self._last_speech_mono = now
-            self._recording = True
-        logger.info("Microphone recording started at %d Hz (device=%s)", chosen_sr, self.device)
+            if started_stream is None:
+                raise RuntimeError(f"Could not open microphone stream: {last_exc}") from last_exc
 
-    def stop(self) -> tuple[np.ndarray, float]:
-        """Stop capturing, resample to 16 kHz mono float32, and return (audio, duration_sec)."""
+            stream_to_abort: sd.InputStream | None = None
+            with self._lock:
+                if not self._starting:
+                    # stop() or cancel() arrived during stream.start()
+                    stream_to_abort = self._stream or started_stream
+                    self._stream = None
+                    self._recording = False
+                else:
+                    self._starting = False
+            if stream_to_abort is not None:
+                self._close_stream(stream_to_abort)
+                return
+            logger.info("Microphone recording started at %d Hz (device=%s)", chosen_sr, self.device)
+        except Exception:
+            with self._lock:
+                self._starting = False
+                self._recording = False
+            raise
+
+    def stop(self, resample: bool = True) -> tuple[np.ndarray, float]:
+        """Stop capturing and return (audio, duration_sec).
+
+        When `resample=True` (default), resamples to 16 kHz mono float32.
+        When `resample=False`, returns raw float32 audio at `capture_sample_rate`.
+        """
         with self._lock:
             stream = self._stream
             self._stream = None
             self._recording = False
+            self._starting = False
             capture_sr = self._capture_sr
 
-        if stream is not None:
-            try:
-                stream.stop()
-                stream.close()
-            except Exception:
-                pass
+        self._close_stream(stream)
 
         with self._lock:
             if not self._chunks:
@@ -302,13 +359,30 @@ class AudioRecorder:
             self._chunks = []
             self._latest_level = 0.0
 
-        audio = resample_audio(raw_audio, capture_sr, SAMPLE_RATE)
-        duration = audio.size / float(SAMPLE_RATE)
-        return audio, duration
+        if resample and capture_sr != SAMPLE_RATE:
+            audio = resample_audio(raw_audio, capture_sr, SAMPLE_RATE)
+            duration = audio.size / float(SAMPLE_RATE)
+            return audio, duration
+
+        sr = capture_sr if capture_sr > 0 else SAMPLE_RATE
+        duration = raw_audio.size / float(sr)
+        return raw_audio, duration
 
     def cancel(self) -> None:
-        """Abort recording and discard captured audio."""
-        self.stop()
+        """Abort recording and discard captured audio without resampling."""
+        with self._lock:
+            stream = self._stream
+            self._stream = None
+            self._recording = False
+            self._starting = False
+            self._chunks = []
+            self._latest_level = 0.0
+
+        self._close_stream(stream)
+
+        with self._lock:
+            self._chunks = []
+            self._latest_level = 0.0
 
     def _trigger_auto_stop(self, reason: str) -> None:
         cb = self.on_auto_stop

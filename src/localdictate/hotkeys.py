@@ -6,6 +6,7 @@ import logging
 import sys
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable, Optional
 
 try:
@@ -87,6 +88,10 @@ MACOS_CARBON_VK_MAP: dict[int, str] = {
     0x2E: "m",
     0x31: "space",
     0x35: "esc",
+    0x7A: "f1",
+    0x78: "f2",
+    0x63: "f3",
+    0x76: "f4",
     0x60: "f5",
     0x61: "f6",
     0x62: "f7",
@@ -95,6 +100,13 @@ MACOS_CARBON_VK_MAP: dict[int, str] = {
     0x6D: "f10",
     0x67: "f11",
     0x6F: "f12",
+    0x69: "f13",
+    0x6B: "f14",
+    0x71: "f15",
+    0x6A: "f16",
+    0x40: "f17",
+    0x4F: "f18",
+    0x50: "f19",
 }
 
 
@@ -129,10 +141,20 @@ def format_hotkey_display(hotkey_str: str, platform_name: Optional[str] = None) 
             labels.append("Right ⌥" if is_mac else "Right Alt")
         elif tok == "alt_l":
             labels.append("Left ⌥" if is_mac else "Left Alt")
+        elif tok == "alt_gr":
+            labels.append("Right ⌥" if is_mac else "AltGr")
         elif tok == "shift":
             labels.append("⇧" if is_mac else "Shift")
-        elif tok == "cmd":
+        elif tok == "shift_r":
+            labels.append("Right ⇧" if is_mac else "Right Shift")
+        elif tok == "shift_l":
+            labels.append("Left ⇧" if is_mac else "Left Shift")
+        elif tok in ("cmd", "win"):
             labels.append("⌘" if is_mac else "Win")
+        elif tok == "cmd_r":
+            labels.append("Right ⌘" if is_mac else "Right Win")
+        elif tok == "cmd_l":
+            labels.append("Left ⌘" if is_mac else "Left Win")
         elif tok == "space":
             labels.append("Space")
         elif tok == "esc":
@@ -240,6 +262,7 @@ class HotkeyManager:
         on_cancel: Callable[[], None] | None = None,
         stale_timeout_sec: float = 12.0,
         platform_name: Optional[str] = None,
+        dispatch_async: Optional[bool] = None,
     ) -> None:
         self.mode = mode
         self.required_tokens = parse_hotkey(hotkey)
@@ -249,13 +272,26 @@ class HotkeyManager:
         self.on_cancel = on_cancel
         self.stale_timeout_sec = max(1.0, float(stale_timeout_sec))
         self._platform_name = platform_name
+        self._dispatch_async = dispatch_async
 
         self._lock = threading.Lock()
         self._pressed: dict[str, float] = {}
         self._combo_active = False
         self._listener: keyboard.Listener | None = None
+        self._executor: ThreadPoolExecutor | None = None
+        self._stopped = False
         self.is_running: bool = False
         self.listener_error: str | None = None
+
+    def _ensure_executor_locked(self) -> ThreadPoolExecutor | None:
+        if self._stopped:
+            return None
+        if self._executor is None:
+            self._executor = ThreadPoolExecutor(
+                max_workers=1,
+                thread_name_prefix="LocalDictate-Hotkey",
+            )
+        return self._executor
 
     def start(self) -> bool:
         """Start the global hotkey listener. Returns False gracefully if blocked by OS permissions."""
@@ -266,6 +302,9 @@ class HotkeyManager:
             self.listener_error = "pynput keyboard backend unavailable"
             return False
         self.listener_error = None
+        with self._lock:
+            self._stopped = False
+            self._ensure_executor_locked()
         try:
             listener = keyboard.Listener(
                 on_press=self._handle_press,
@@ -296,8 +335,27 @@ class HotkeyManager:
             self._listener = None
         self.is_running = False
         with self._lock:
+            self._stopped = True
             self._pressed.clear()
             self._combo_active = False
+            executor = self._executor
+            self._executor = None
+        if executor is not None:
+            try:
+                executor.shutdown(wait=False, cancel_futures=True)
+            except Exception:
+                pass
+
+    def flush(self, timeout: float = 2.0) -> None:
+        """Wait for all queued hotkey callbacks to complete (useful in tests and clean teardown)."""
+        with self._lock:
+            executor = self._executor
+        if executor is not None:
+            try:
+                fut = executor.submit(lambda: None)
+                fut.result(timeout=timeout)
+            except Exception:
+                pass
 
     def reset_stuck_keys(self) -> None:
         """Force-clear all tracked pressed keys (e.g. after sleep/wake or window switch)."""
@@ -381,9 +439,29 @@ class HotkeyManager:
         if trigger_ptt_stop and self.on_ptt_stop is not None:
             self._fire(self.on_ptt_stop)
 
-    @staticmethod
-    def _fire(callback: Callable[[], None]) -> None:
+    def _fire(self, callback: Callable[[], None]) -> None:
+        """Dispatch callback off the OS low-level keyboard hook thread via dedicated worker."""
+        use_async = self.is_running if self._dispatch_async is None else self._dispatch_async
+        if not use_async:
+            try:
+                callback()
+            except Exception:
+                logger.exception("Error in hotkey callback")
+            return
+
+        with self._lock:
+            executor = self._ensure_executor_locked()
+        if executor is None:
+            return
+
+        def _invoke() -> None:
+            try:
+                callback()
+            except Exception:
+                logger.exception("Error in hotkey callback")
+
         try:
-            callback()
-        except Exception:
-            logger.exception("Error in hotkey callback")
+            executor.submit(_invoke)
+        except RuntimeError:
+            # Executor was shut down concurrently by stop()
+            pass

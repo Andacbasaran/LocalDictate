@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import sqlite3
 import threading
 import unicodedata
@@ -82,20 +83,35 @@ class HistoryStore:
         self.db_path = db_path or get_history_db_path()
         self._lock = threading.Lock()
         self._conn: Optional[sqlite3.Connection] = None
+        self._closed = False
         self._init_db()
 
     def _get_conn(self) -> sqlite3.Connection:
+        if self._closed:
+            raise sqlite3.ProgrammingError("HistoryStore has been closed.")
         if self._conn is None:
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            if os.name == "posix":
+                try:
+                    os.chmod(self.db_path.parent, 0o700)
+                except OSError:
+                    pass
             conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
             conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA busy_timeout=5000;")
             conn.execute("PRAGMA journal_mode=WAL;")
             conn.execute("PRAGMA synchronous=NORMAL;")
             self._conn = conn
+            if os.name == "posix" and self.db_path.exists():
+                try:
+                    os.chmod(self.db_path, 0o600)
+                except OSError:
+                    pass
         return self._conn
 
     def close(self) -> None:
         with self._lock:
+            self._closed = True
             if self._conn is not None:
                 try:
                     self._conn.close()
@@ -240,9 +256,14 @@ class HistoryStore:
         params: list[object] = []
 
         if q_norm:
-            like = f"%{q_norm}%"
-            clauses.append("(search_norm LIKE ? OR final_text LIKE ? OR raw_text LIKE ?)")
-            params.extend([like, f"%{query.strip()}%", f"%{query.strip()}%"])
+            esc_norm = q_norm.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            esc_raw = query.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            like_norm = f"%{esc_norm}%"
+            like_raw = f"%{esc_raw}%"
+            clauses.append(
+                "(search_norm LIKE ? ESCAPE '\\' OR final_text LIKE ? ESCAPE '\\' OR raw_text LIKE ? ESCAPE '\\')"
+            )
+            params.extend([like_norm, like_raw, like_raw])
         if mode_filter and mode_filter != "all":
             clauses.append("mode = ?")
             params.append(mode_filter)
@@ -330,6 +351,12 @@ class HistoryStore:
                 encoding="utf-8",
             )
         elif kind == "csv":
+            def _safe_csv_cell(val: str) -> str:
+                s = str(val or "")
+                if s and s.lstrip(" ")[0] in ("=", "+", "-", "@", "\t", "\r"):
+                    return "'" + s
+                return s
+
             with out_path.open("w", encoding="utf-8-sig", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerow(
@@ -354,7 +381,7 @@ class HistoryStore:
                         [
                             e.id,
                             e.created_at,
-                            e.target_app,
+                            _safe_csv_cell(e.target_app),
                             e.mode,
                             e.language,
                             e.model_size,
@@ -363,8 +390,8 @@ class HistoryStore:
                             e.word_count,
                             int(e.used_llm),
                             int(e.pinned),
-                            e.final_text,
-                            e.raw_text,
+                            _safe_csv_cell(e.final_text),
+                            _safe_csv_cell(e.raw_text),
                         ]
                     )
         elif kind == "txt":

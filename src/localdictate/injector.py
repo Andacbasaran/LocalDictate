@@ -101,7 +101,7 @@ def _win32_release_modifiers_if_held() -> None:
         user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
         user32.GetAsyncKeyState.restype = ctypes.c_short
         release_events: list[tuple[int, int]] = []
-        for vk in (VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU, VK_LSHIFT, VK_RSHIFT):
+        for vk in (VK_LCONTROL, VK_RCONTROL, VK_LMENU, VK_RMENU, VK_LSHIFT, VK_RSHIFT, 0x5B, 0x5C):
             if user32.GetAsyncKeyState(vk) & 0x8000:
                 release_events.append((vk, KEYEVENTF_KEYUP))
         if release_events:
@@ -202,6 +202,13 @@ def _paste_macos_osascript() -> bool:
 
 
 def _paste_macos() -> bool:
+    if sys.platform != "darwin":
+        return False
+    if not check_accessibility_permission():
+        logger.warning(
+            "macOS Accessibility permission not granted; skipping auto-paste (text kept in clipboard)."
+        )
+        return False
     if _paste_macos_quartz():
         return True
     return _paste_macos_osascript()
@@ -388,15 +395,18 @@ class TextInjector:
 
         self.last_pasted = pasted_ok
 
-        # CRITICAL SAFETY: Only restore previous clipboard when paste actually succeeded!
-        if pasted_ok and self.restore_clipboard and previous_clipboard is not None:
+        # CRITICAL SAFETY: Only restore previous clipboard when paste actually succeeded
+        # and the previous clipboard held actual text (empty string may indicate an image/file)!
+        if pasted_ok and self.restore_clipboard and previous_clipboard:
             delay_sec = max(0.15, self.clipboard_restore_delay_ms / 1000.0)
+            expected_norm = text.replace("\r\n", "\n")
 
             def _restore() -> None:
                 time.sleep(delay_sec)
                 try:
                     # Only restore if the user hasn't copied something else in the meantime
-                    if self._clipboard_read() == text:
+                    current_norm = (self._clipboard_read() or "").replace("\r\n", "\n")
+                    if current_norm == expected_norm:
                         self._clipboard_write(previous_clipboard)
                 except Exception:
                     pass

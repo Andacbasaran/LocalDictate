@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 import os
 import plistlib
-import shlex
 import sys
 from pathlib import Path
 from typing import Optional
@@ -23,6 +22,9 @@ LINUX_DESKTOP_NAME = "localdictate.desktop"
 def build_launch_args() -> list[str]:
     """Return argv list to launch LocalDictate at user login."""
     if getattr(sys, "frozen", False):
+        appimage = os.environ.get("APPIMAGE")
+        if sys.platform.startswith("linux") and appimage:
+            return [appimage, "--minimized"]
         return [sys.executable, "--minimized"]
 
     exe = Path(sys.executable)
@@ -36,15 +38,26 @@ def build_launch_args() -> list[str]:
     entry = project_root / "main.py"
     if not entry.exists():
         entry = project_root / "run.py"
-    return [str(launcher), str(entry), "--minimized"]
+    if entry.exists():
+        return [str(launcher), str(entry), "--minimized"]
+    return [str(launcher), "-m", "localdictate.main", "--minimized"]
+
+
+def _escape_freedesktop_exec_arg(arg: str) -> str:
+    """Escape an Exec argument per Freedesktop Desktop Entry specification."""
+    needs_quote = any(ch in arg for ch in ' \t\n"\'\\><~|&;$*?#()`')
+    if not needs_quote:
+        return arg
+    escaped = arg.replace("\\", "\\\\").replace('"', '\\"').replace("$", "\\$").replace("`", "\\`")
+    return f'"{escaped}"'
 
 
 def _build_launch_command() -> str:
-    """Return a shell-quoted launch command string (Windows Registry / Linux Exec)."""
+    """Return a platform-quoted launch command string (Windows Registry / Linux Exec)."""
     args = build_launch_args()
     if sys.platform == "win32":
         return " ".join(f'"{a}"' for a in args)
-    return " ".join(shlex.quote(a) for a in args)
+    return " ".join(_escape_freedesktop_exec_arg(a) for a in args)
 
 
 def get_macos_plist_path(base_dir: Optional[Path] = None) -> Path:

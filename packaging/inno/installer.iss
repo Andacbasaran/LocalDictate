@@ -9,6 +9,12 @@
   #define MyAppVersion "1.0.0"
 #endif
 
+#if Pos("-", MyAppVersion) > 0
+  #define MyAppNumericVersion Copy(MyAppVersion, 1, Pos("-", MyAppVersion) - 1)
+#else
+  #define MyAppNumericVersion MyAppVersion
+#endif
+
 #define MyAppName "LocalDictate"
 #define MyAppPublisher "Andac Basaran"
 #define MyAppURL "https://localdictate.andacbasaran.com"
@@ -43,7 +49,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
 CloseApplications=force
 RestartApplications=yes
-VersionInfoVersion={#MyAppVersion}.0
+VersionInfoVersion={#MyAppNumericVersion}.0
 VersionInfoCompany={#MyAppPublisher}
 VersionInfoDescription={#MyAppName} — 100% Offline Desktop AI Dictation Studio
 VersionInfoProductName={#MyAppName}

@@ -153,6 +153,8 @@ def build_app_bundle(base_dir: Path, icns_path: Optional[Path], arch: str) -> Pa
         "pynput.mouse._darwin",
         "--hidden-import",
         "PyQt6.QtNetwork",
+        "--hidden-import",
+        "scipy.signal",
     ]
     if icns_path and icns_path.exists():
         cmd.extend(["--icon", str(icns_path), "--add-data", f"{icns_path}:assets"])

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import sys
 import time
 import webbrowser
@@ -63,7 +64,7 @@ from ..platform_utils import check_accessibility_permission
 from ..postprocess import fetch_llm_models
 from ..snippets import apply_replacements, apply_voice_commands, merge_starter_pack
 from ..transcriber import is_model_cached
-from ..updater import UpdateCheckerThread, UpdateInfo
+from ..updater import UpdateCheckerThread, UpdateInfo, is_trusted_update_url
 from .widgets import (
     ACCENT_AMBER,
     ACCENT_EMERALD,
@@ -93,21 +94,47 @@ MODE_PILLS: list[tuple[str, str]] = [
 ]
 
 
+def _escape_rule_value(val: str) -> str:
+    """Escape backslashes and newlines so multiline snippets round-trip on one line."""
+    normalized = str(val).replace("\r\n", "\n").replace("\r", "")
+    return normalized.replace("\\", "\\\\").replace("\n", "\\n")
+
+
+def _unescape_rule_value(raw: str) -> str:
+    """Single-pass unescape for \\\\, \\n, and \\r in snippet rule values."""
+    def _sub(match: re.Match[str]) -> str:
+        seq = match.group(0)
+        if seq == r"\\":
+            return "\\"
+        if seq == r"\n":
+            return "\n"
+        if seq == r"\r":
+            return ""
+        return seq
+
+    return re.sub(r"\\(\\|n|r)", _sub, raw)
+
+
 def _format_rules_text(rules: dict[str, str]) -> str:
-    return "\n".join(f"{k} -> {v}" for k, v in rules.items())
+    lines: list[str] = []
+    for k, v in rules.items():
+        key = str(k).replace("\r", "").replace("\n", " ").strip()
+        if not key:
+            continue
+        lines.append(f"{key} -> {_escape_rule_value(v)}")
+    return "\n".join(lines)
 
 
 def _parse_rules_text(text: str) -> dict[str, str]:
     parsed: dict[str, str] = {}
-    for line in text.splitlines():
-        clean = line.strip()
-        if not clean or "->" not in clean:
+    for raw_line in text.splitlines():
+        if not raw_line.strip() or "->" not in raw_line:
             continue
-        src, dst = clean.split("->", 1)
+        src, dst = raw_line.split("->", 1)
         src = src.strip()
-        dst = dst.strip()
+        dst = dst.lstrip(" \t")
         if src:
-            parsed[src] = dst
+            parsed[src] = _unescape_rule_value(dst)
     return parsed
 
 
@@ -139,9 +166,11 @@ class _LLMTestThread(QThread):
                 offline_only=self._offline_only,
                 timeout=3.5,
             )
-            self.finished_probe.emit(models, "")
+            if not self.isInterruptionRequested():
+                self.finished_probe.emit(models, "")
         except Exception as exc:
-            self.finished_probe.emit([], str(exc))
+            if not self.isInterruptionRequested():
+                self.finished_probe.emit([], str(exc))
 
 
 class _QuickBenchmarkThread(QThread):
@@ -154,17 +183,23 @@ class _QuickBenchmarkThread(QThread):
         self._history = history
 
     def run(self) -> None:
+        if self.isInterruptionRequested():
+            return
         # 1. Resample 48kHz -> 16kHz (2s synthetic clip)
         rng = np.random.default_rng(7)
         clip_48k = (rng.standard_normal(48_000 * 2) * 0.05).astype(np.float32)
         t0 = time.perf_counter()
         for _ in range(5):
+            if self.isInterruptionRequested():
+                return
             clip_16k = resample_audio(clip_48k, 48_000, 16_000)
         resample_ms = ((time.perf_counter() - t0) / 5.0) * 1000.0
 
         # 2. Energy VAD
         t0 = time.perf_counter()
         for _ in range(25):
+            if self.isInterruptionRequested():
+                return
             detect_speech_segments(clip_16k, 16_000)
         vad_ms = ((time.perf_counter() - t0) / 25.0) * 1000.0
 
@@ -173,6 +208,8 @@ class _QuickBenchmarkThread(QThread):
         rules = {"today date": "{{iso_date}}", "c++": "C++", "node.js": "Node.js", ".env": "`.env`"}
         t0 = time.perf_counter()
         for _ in range(200):
+            if self.isInterruptionRequested():
+                return
             txt = apply_voice_commands(sample)
             apply_replacements(txt, rules)
         snippet_ms = ((time.perf_counter() - t0) / 200.0) * 1000.0
@@ -182,17 +219,20 @@ class _QuickBenchmarkThread(QThread):
         if self._history is not None:
             t0 = time.perf_counter()
             for _ in range(20):
+                if self.isInterruptionRequested():
+                    return
                 self._history.list_recent(limit=50, query="istanbul")
             search_ms = ((time.perf_counter() - t0) / 20.0) * 1000.0
 
-        self.benchmark_done.emit(
-            {
-                "resample_ms": resample_ms,
-                "vad_ms": vad_ms,
-                "snippet_ms": snippet_ms,
-                "search_ms": search_ms,
-            }
-        )
+        if not self.isInterruptionRequested():
+            self.benchmark_done.emit(
+                {
+                    "resample_ms": resample_ms,
+                    "vad_ms": vad_ms,
+                    "snippet_ms": snippet_ms,
+                    "search_ms": search_ms,
+                }
+            )
 
 
 class StudioWindow(QMainWindow):
@@ -582,7 +622,7 @@ class StudioWindow(QMainWindow):
         self.btn_dictate.setMinimumHeight(36)
         self.btn_dictate.setMinimumWidth(148)
         self._set_dictate_cta_style(recording=False)
-        self.btn_dictate.clicked.connect(self.controller.toggle_recording)
+        self.btn_dictate.clicked.connect(self._on_dictate_clicked)
         cmd_row.addWidget(self.btn_dictate)
 
         lay.addLayout(cmd_row)
@@ -1276,6 +1316,8 @@ class StudioWindow(QMainWindow):
         self.controller.dictation_completed.connect(self.on_dictation_completed)
         self.controller.model_ready.connect(self.on_model_ready)
         self.controller.active_context_changed.connect(self.on_active_context_changed)
+        if hasattr(self.controller, "recording_starting"):
+            self.controller.recording_starting.connect(self._stop_mic_test_for_dictation)
 
     def switch_tab(self, index: int) -> None:
         self._active_tab = max(0, min(2, int(index)))
@@ -1328,6 +1370,8 @@ class StudioWindow(QMainWindow):
                 )
 
     def on_state_changed(self, state: str, message: str) -> None:
+        if state == AppState.RECORDING.value and self._mic_testing:
+            self._stop_mic_test(reset_waveform=False)
         self.waveform.set_state(state)
         self.lbl_engine_status.setText(message)
 
@@ -1556,6 +1600,15 @@ class StudioWindow(QMainWindow):
         self.lbl_wpm_pill.setText("— WPM")
         self.waveform.reset_idle()
 
+    def _on_dictate_clicked(self) -> None:
+        if self._mic_testing:
+            self._stop_mic_test(reset_waveform=False)
+        self.controller.toggle_recording()
+
+    def _stop_mic_test_for_dictation(self) -> None:
+        if self._mic_testing:
+            self._stop_mic_test(reset_waveform=False)
+
     def _toggle_mic_test(self) -> None:
         if self._mic_testing:
             self._stop_mic_test()
@@ -1573,7 +1626,7 @@ class StudioWindow(QMainWindow):
         except Exception as exc:
             self.lbl_stage_pill.setText(f"● {self.i18n.t('status_mic_error', err=exc)}")
 
-    def _stop_mic_test(self) -> None:
+    def _stop_mic_test(self, reset_waveform: bool = True) -> None:
         self._mic_test_timer.stop()
         if self._mic_test_recorder is not None:
             try:
@@ -1582,8 +1635,9 @@ class StudioWindow(QMainWindow):
                 pass
             self._mic_test_recorder = None
         self._mic_testing = False
-        self.waveform.set_state("idle")
-        self.waveform.reset_idle()
+        if reset_waveform:
+            self.waveform.set_state("idle")
+            self.waveform.reset_idle()
         self.bar_mic_vu.setValue(0)
         self.btn_test_mic.setText(f"  {self.i18n.t('btn_test_mic')}")
         self.btn_settings_mic_test.setText(self.i18n.t("btn_test_mic"))
@@ -1845,6 +1899,28 @@ class StudioWindow(QMainWindow):
         else:
             self.edit_toggle_hk.setText(hotkey)
 
+    def _clear_thread_ref(self, attr: str, thread: QThread) -> None:
+        if getattr(self, attr, None) is thread:
+            setattr(self, attr, None)
+
+    def _shutdown_background_threads(self, wait_ms: int = 2000) -> None:
+        """Cancel and cleanly wait on any active QThreads before window teardown."""
+        for attr in ("_llm_test_thread", "_update_thread", "_bench_thread"):
+            thread = getattr(self, attr, None)
+            if thread is None:
+                continue
+            setattr(self, attr, None)
+            try:
+                thread.requestInterruption()
+                cancel_fn = getattr(thread, "cancel", None)
+                if callable(cancel_fn):
+                    cancel_fn()
+                if thread.isRunning():
+                    thread.quit()
+                    thread.wait(wait_ms)
+            except RuntimeError:
+                pass
+
     def _test_llm_async(self) -> None:
         if self._llm_test_thread is not None and self._llm_test_thread.isRunning():
             return
@@ -1859,6 +1935,8 @@ class StudioWindow(QMainWindow):
 
         thread = _LLMTestThread(backend, url, api_key, offline_lock, parent=self)
         thread.finished_probe.connect(self._on_llm_probe_finished)
+        thread.finished.connect(lambda t=thread: self._clear_thread_ref("_llm_test_thread", t))
+        thread.finished.connect(thread.deleteLater)
         self._llm_test_thread = thread
         thread.start()
 
@@ -1894,6 +1972,8 @@ class StudioWindow(QMainWindow):
 
         thread = UpdateCheckerThread(current_version=__version__, parent=self)
         thread.update_checked.connect(lambda info: self._on_update_checked(info, silent=silent))
+        thread.finished.connect(lambda t=thread: self._clear_thread_ref("_update_thread", t))
+        thread.finished.connect(thread.deleteLater)
         self._update_thread = thread
         thread.start()
 
@@ -1916,7 +1996,11 @@ class StudioWindow(QMainWindow):
                     f"LocalDictate v{info.latest_version} is available. Open GitHub Release page?",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 )
-                if ans == QMessageBox.StandardButton.Yes and info.release_url:
+                if (
+                    ans == QMessageBox.StandardButton.Yes
+                    and info.release_url
+                    and is_trusted_update_url(info.release_url)
+                ):
                     webbrowser.open(info.release_url)
         elif not silent:
             self.lbl_sys_feedback.setStyleSheet("color: #10B981; font-size: 7.8pt;")
@@ -1930,6 +2014,8 @@ class StudioWindow(QMainWindow):
         self.lbl_sys_feedback.setText(self.i18n.t("bench_running"))
         thread = _QuickBenchmarkThread(history=self.history, parent=self)
         thread.benchmark_done.connect(self._on_benchmark_done)
+        thread.finished.connect(lambda t=thread: self._clear_thread_ref("_bench_thread", t))
+        thread.finished.connect(thread.deleteLater)
         self._bench_thread = thread
         thread.start()
 
@@ -2036,6 +2122,7 @@ class StudioWindow(QMainWindow):
     def request_force_quit(self) -> None:
         self._force_quit = True
         self._stop_mic_test()
+        self._shutdown_background_threads()
         self.close()
 
     def closeEvent(self, event) -> None:  # noqa: N802
@@ -2048,8 +2135,8 @@ class StudioWindow(QMainWindow):
             event.ignore()
             self.hide()
             return
+        self._shutdown_background_threads()
         event.accept()
         app = QApplication.instance()
         if app is not None and not self._force_quit:
-            self.controller.shutdown()
             app.quit()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import ctypes
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,24 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+# Short executable names that must match as whole tokens (not arbitrary substrings like 'sun-awt-X11' or 'Encoder')
+_EXACT_TOKEN_KEYS = frozenset({"wt", "cmd", "code", "pwsh"})
+
+
+def _matches_app_keyword(app_low: str, keyword: str) -> bool:
+    kw = keyword.strip().lower()
+    if not kw:
+        return False
+    if kw in _EXACT_TOKEN_KEYS:
+        tokens = [t for t in re.split(r"[^a-z0-9]+", app_low) if t]
+        if kw == "code":
+            # Match VS Code ("code", "code.exe", "vs code", "code - insiders") but not "Xcode"/"Encoder"/"Barcode"
+            return app_low in ("code", "code.exe", "code-oss", "code - insiders", "vs code") or (
+                "code" in tokens and not any(bad in app_low for bad in ("encoder", "barcode", "decoder"))
+            )
+        return kw in tokens
+    return kw in app_low
 
 # Terminal app substrings used for Ctrl+Shift+V routing on Linux and code mode routing
 TERMINAL_APP_KEYWORDS: Tuple[str, ...] = (
@@ -155,7 +174,7 @@ def is_terminal_app(app_name: str) -> bool:
     low = (app_name or "").strip().lower()
     if not low:
         return False
-    return any(kw in low for kw in TERMINAL_APP_KEYWORDS)
+    return any(_matches_app_keyword(low, kw) for kw in TERMINAL_APP_KEYWORDS)
 
 
 def infer_mode_for_app(
@@ -178,7 +197,7 @@ def infer_mode_for_app(
     for key, mode in sorted(
         APP_MODE_ROUTING_DEFAULTS.items(), key=lambda kv: len(kv[0]), reverse=True
     ):
-        if key in low:
+        if _matches_app_keyword(low, key):
             return mode
 
     return default_mode
@@ -304,7 +323,30 @@ def _get_active_app_macos() -> str:
 
 
 def _get_active_app_linux() -> str:
-    """Return active window class/name on Linux X11 using xdotool or xprop."""
+    """Return active window class/name on Linux (avoiding X11 tools on native Wayland)."""
+    if is_wayland():
+        # Try native Wayland compositor queries before avoiding X11 xdotool/xprop stalls
+        hyprctl = shutil.which("hyprctl")
+        if hyprctl:
+            try:
+                import json as _json
+
+                res = subprocess.run(
+                    [hyprctl, "activewindow", "-j"],
+                    capture_output=True,
+                    text=True,
+                    timeout=0.35,
+                    check=False,
+                )
+                if res.returncode == 0 and res.stdout.strip():
+                    data = _json.loads(res.stdout)
+                    cls = str(data.get("class") or data.get("initialClass") or "").strip()
+                    if cls:
+                        return cls
+            except Exception:
+                pass
+        return ""
+
     xdotool = shutil.which("xdotool")
     if xdotool:
         try:

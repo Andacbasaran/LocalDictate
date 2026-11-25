@@ -80,6 +80,8 @@ def _default_clipboard_getter() -> str:
 def build_safe_term_pattern(term: str) -> re.Pattern[str]:
     """Build a case-insensitive boundary-aware regex safe for symbols like C++, node.js, .env, C#."""
     clean = term.strip()
+    if not clean:
+        raise ValueError("Term cannot be empty or whitespace.")
     escaped = re.escape(clean)
     left = r"(?<!\w)" if (clean[0].isalnum() or clean[0] == "_") else r"(?<!\S)"
     right = (
@@ -90,30 +92,68 @@ def build_safe_term_pattern(term: str) -> re.Pattern[str]:
     return re.compile(f"{left}{escaped}{right}", re.IGNORECASE)
 
 
+# Ambiguous single-word nouns that should only trigger at end-of-clause/sentence or before another command
+_AMBIGUOUS_VOICE_WORDS = frozenset({"period", "colon", "nokta"})
+
+
+def _compile_voice_commands() -> list[tuple[re.Pattern[str], str, bool]]:
+    compiled: list[tuple[re.Pattern[str], str, bool]] = []
+    for phrase, replacement in VOICE_COMMANDS:
+        base_pat = build_safe_term_pattern(phrase).pattern
+        is_break = replacement in ("\n", "\n\n")
+        if is_break:
+            pat = re.compile(rf"[ \t]*{base_pat}[ \t]*", re.IGNORECASE)
+        elif phrase.lower() in _AMBIGUOUS_VOICE_WORDS:
+            # Only trigger ambiguous words like 'period'/'colon'/'nokta' at end of utterance/line
+            # or followed by punctuation/line-break command (never mid-phrase like "during this period of time")
+            pat = re.compile(rf"[ \t]*{base_pat}(?=$|[\n,.;:!?])", re.IGNORECASE)
+        else:
+            pat = re.compile(rf"[ \t]*{base_pat}", re.IGNORECASE)
+        compiled.append((pat, replacement, is_break))
+    return compiled
+
+
+_COMPILED_VOICE_COMMANDS = _compile_voice_commands()
+
+
 def apply_voice_commands(text: str) -> str:
     """Convert spoken EN/TR formatting commands (e.g. 'new line', 'yeni paragraf', 'comma') into symbols."""
     if not text:
         return text
 
     result = text
-    for phrase, replacement in VOICE_COMMANDS:
-        pattern = build_safe_term_pattern(phrase)
-        if replacement in ("\n", "\n\n"):
-            # Consume surrounding spaces around line breaks cleanly
-            break_pat = re.compile(rf"[ \t]*{pattern.pattern}[ \t]*", re.IGNORECASE)
-            result = break_pat.sub(lambda _m, r=replacement: r, result)
+    any_replaced = False
+    for pat, replacement, is_break in _COMPILED_VOICE_COMMANDS:
+        if is_break:
+            new_res, count = pat.subn(lambda _m, r=replacement: r, result)
         else:
-            # Attach punctuation cleanly to preceding word
-            punct_pat = re.compile(rf"[ \t]*{pattern.pattern}", re.IGNORECASE)
-            result = punct_pat.sub(lambda _m, r=replacement: r, result)
+            # Avoid duplicating an identical punctuation mark immediately before or after the command
+            def _sub_punct(m: re.Match[str], r: str = replacement) -> str:
+                return r
 
-    # Collapse accidental double punctuation like ".." produced if Whisper already added a period
-    result = re.sub(r"([,.;:!?])\1+", r"\1", result)
+            new_res, count = pat.subn(_sub_punct, result)
+            if count > 0 and replacement in (",", ".", ";", ":", "!", "?"):
+                esc = re.escape(replacement)
+                # Collapse accidental double punctuation produced right at the substituted symbol
+                # without touching intentional `...` ellipses, `::`, or `../` paths!
+                if replacement == ".":
+                    new_res = re.sub(r"(?<!\.)\.\.(?![./])", ".", new_res)
+                elif replacement == ":":
+                    new_res = re.sub(r"(?<!\w)::(?!\w)", ":", new_res)
+                else:
+                    new_res = re.sub(rf"{esc}{{2,}}", replacement, new_res)
+        if count > 0:
+            any_replaced = True
+            result = new_res
+
+    if not any_replaced:
+        return result
+
     # Clean horizontal spaces without destroying newlines
     lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in result.split("\n")]
     result = "\n".join(lines)
-    # Remove leading spaces before punctuation on each line
-    result = re.sub(r"[ \t]+([,.;:!?])", r"\1", result)
+    # Remove spaces before punctuation only when NOT followed by word/path chars (keeps `.env`, `../src`)
+    result = re.sub(r"[ \t]+([,.;:!?])(?=$|\s)", r"\1", result)
     return result.strip()
 
 
@@ -154,24 +194,45 @@ def apply_replacements(
     clipboard_getter: Optional[Callable[[], str]] = None,
     now: Optional[datetime] = None,
 ) -> str:
-    """Apply safe dictionary replacements & dynamic snippets (longest match first, backslash-safe)."""
+    """Apply safe dictionary replacements & dynamic snippets (longest match first, lazy template expansion)."""
     if not text or not replacements:
         return text
 
-    result = text
+    # Build a single longest-first alternating pattern so replacements don't chain-corrupt each other
+    # and dynamic templates ({{clipboard}}) are ONLY expanded when a trigger actually matches!
+    ordered: list[tuple[str, str]] = []
+    seen_lower: set[str] = set()
     for src, dst in sorted(replacements.items(), key=lambda kv: len(kv[0]), reverse=True):
         src_clean = src.strip()
         if not src_clean:
             continue
-        expanded_dst = expand_snippet_templates(
-            str(dst),
-            clipboard_getter=clipboard_getter,
-            now=now,
-        )
-        pattern = build_safe_term_pattern(src_clean)
-        # Use lambda replacement so backslashes (e.g. C:\Users\name) never trigger re.sub group escapes
-        result = pattern.sub(lambda _m, d=expanded_dst: d, result)
-    return result
+        low = src_clean.lower()
+        if low in seen_lower:
+            continue
+        seen_lower.add(low)
+        ordered.append((src_clean, str(dst)))
+
+    if not ordered:
+        return text
+
+    parts = [f"(?P<r{idx}>{build_safe_term_pattern(src).pattern})" for idx, (src, _) in enumerate(ordered)]
+    combined = re.compile("|".join(parts), re.IGNORECASE)
+    dst_by_group = {f"r{idx}": dst for idx, (_, dst) in enumerate(ordered)}
+    expanded_cache: Dict[str, str] = {}
+
+    def _replace(match: re.Match[str]) -> str:
+        gname = match.lastgroup
+        if not gname:
+            return match.group(0)
+        if gname not in expanded_cache:
+            expanded_cache[gname] = expand_snippet_templates(
+                dst_by_group[gname],
+                clipboard_getter=clipboard_getter,
+                now=now,
+            )
+        return expanded_cache[gname]
+
+    return combined.sub(_replace, text)
 
 
 def merge_starter_pack(existing: Dict[str, str], pack_id: str) -> Dict[str, str]:

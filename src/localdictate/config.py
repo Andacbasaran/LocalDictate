@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any
@@ -183,7 +184,7 @@ class AppConfig:
 
 
 def load_config(path: Path | None = None) -> AppConfig:
-    """Load configuration from disk, returning defaults if missing or invalid."""
+    """Load configuration from disk, backing up corrupt JSON instead of silently wiping."""
     cfg_path = path or get_config_path()
     if not cfg_path.exists():
         return AppConfig()
@@ -192,16 +193,40 @@ def load_config(path: Path | None = None) -> AppConfig:
         if not isinstance(raw, dict):
             return AppConfig()
         return AppConfig.from_dict(raw)
-    except (OSError, json.JSONDecodeError, TypeError):
+    except (json.JSONDecodeError, TypeError, ValueError):
+        try:
+            bak = cfg_path.with_name(f"{cfg_path.name}.corrupt.bak")
+            cfg_path.replace(bak)
+        except OSError:
+            pass
+        return AppConfig()
+    except OSError:
         return AppConfig()
 
 
 def save_config(config: AppConfig, path: Path | None = None) -> Path:
-    """Persist configuration to disk as formatted JSON."""
+    """Atomically persist configuration to disk with restrictive POSIX permissions."""
     cfg_path = path or get_config_path()
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
-    cfg_path.write_text(
-        json.dumps(config.to_dict(), indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    if os.name == "posix":
+        try:
+            os.chmod(cfg_path.parent, 0o700)
+        except OSError:
+            pass
+    payload = json.dumps(config.to_dict(), indent=2, ensure_ascii=False)
+    tmp_path = cfg_path.with_name(f".{cfg_path.name}.{os.getpid()}.tmp")
+    try:
+        tmp_path.write_text(payload, encoding="utf-8")
+        if os.name == "posix":
+            try:
+                os.chmod(tmp_path, 0o600)
+            except OSError:
+                pass
+        os.replace(tmp_path, cfg_path)
+    finally:
+        if tmp_path.exists():
+            try:
+                tmp_path.unlink()
+            except OSError:
+                pass
     return cfg_path

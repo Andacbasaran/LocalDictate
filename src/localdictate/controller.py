@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Callable, Optional
@@ -13,7 +13,7 @@ from typing import Callable, Optional
 import pyperclip
 from PyQt6.QtCore import QCoreApplication, QObject, QTimer, pyqtSignal
 
-from .audio import AudioRecorder, load_audio_file
+from .audio import SAMPLE_RATE, AudioRecorder, load_audio_file, resample_audio
 from .autostart import set_autostart
 from .config import AppConfig, save_config
 from .hardware import HardwareProfile, compute_runtime_tuning, detect_hardware_profile
@@ -64,6 +64,7 @@ class DictationController(QObject):
     model_ready = pyqtSignal(str)  # model_size
     error_occurred = pyqtSignal(str)
     active_context_changed = pyqtSignal(str, str)  # (target_app, resolved_mode)
+    recording_starting = pyqtSignal()  # emitted before recorder.start() to stop mic test cleanly
 
     def __init__(
         self,
@@ -88,8 +89,11 @@ class DictationController(QObject):
         )
 
         self._state_lock = threading.Lock()
+        self._recorder_lock = threading.Lock()
         self._state = AppState.IDLE
+        self._session_gen: int = 0
         self._model_loading = False
+        self._reload_pending = False
         self.last_text: str = ""
         self.last_raw_text: str = ""
         self.last_outcome: Optional[DictationOutcome] = None
@@ -113,6 +117,7 @@ class DictationController(QObject):
             beam_size=config.beam_size,
             performance_profile=config.performance_profile,
             hw_profile=self.hw_profile,
+            offline_only=config.offline_only,
         )
         self.postprocessor = postprocessor or TextPostProcessor(config=config)
         self.injector = injector or TextInjector(
@@ -187,10 +192,15 @@ class DictationController(QObject):
 
     def shutdown(self) -> None:
         """Cleanly release hotkey hooks, audio streams, and SQLite connection."""
+        with self._state_lock:
+            self._session_gen += 1
+            self._reload_pending = False
+            self._state = AppState.IDLE
         self._stop_meter_timer()
         self.hotkey_manager.stop()
-        if self.recorder.is_recording:
-            self.recorder.cancel()
+        with self._recorder_lock:
+            if self.recorder.is_recording:
+                self.recorder.cancel()
         if self.history is not None:
             close_fn = getattr(self.history, "close", None)
             if callable(close_fn):
@@ -223,11 +233,27 @@ class DictationController(QObject):
             save_config(self.config)
         self.active_context_changed.emit(self._active_target_app, mode)
 
+    def _maybe_trigger_pending_reload(self) -> None:
+        """Run any deferred model reload once the controller has returned to IDLE."""
+        with self._state_lock:
+            should_reload = (
+                self._reload_pending
+                and not self._model_loading
+                and self._state == AppState.IDLE
+            )
+        if should_reload:
+            self.preload_model()
+
     def preload_model(self) -> None:
-        """Load the configured Whisper model asynchronously."""
+        """Load the configured Whisper model asynchronously, deferring if busy."""
         with self._state_lock:
             if self._model_loading:
+                self._reload_pending = True
                 return
+            if self._state in (AppState.RECORDING, AppState.TRANSCRIBING, AppState.REFINING):
+                self._reload_pending = True
+                return
+            self._reload_pending = False
             self._model_loading = True
             self._state = AppState.LOADING_MODEL
         self.state_changed.emit(
@@ -239,16 +265,26 @@ class DictationController(QObject):
     def _load_model_worker(self) -> None:
         try:
             self.transcriber.load()
+            reload_again = False
             with self._state_lock:
                 self._model_loading = False
-                if self._state == AppState.LOADING_MODEL:
+                if self._reload_pending:
+                    self._reload_pending = False
+                    reload_again = True
+                    if self._state == AppState.LOADING_MODEL:
+                        self._state = AppState.IDLE
+                elif self._state == AppState.LOADING_MODEL:
                     self._state = AppState.IDLE
+            if reload_again:
+                self.preload_model()
+                return
             self.model_ready.emit(self.config.model_size)
             self.state_changed.emit(AppState.IDLE.value, self.i18n.t("status_ready"))
         except Exception as exc:
             logger.exception("Failed to load Whisper model")
             with self._state_lock:
                 self._model_loading = False
+                self._reload_pending = False
                 self._state = AppState.ERROR
             play_error_cue(self.config.sound_effects)
             msg = self.i18n.t("status_model_error", err=exc)
@@ -302,24 +338,44 @@ class DictationController(QObject):
         with self._state_lock:
             if self._state not in (AppState.IDLE, AppState.ERROR):
                 return
+            self._session_gen += 1
+            my_gen = self._session_gen
             self._state = AppState.RECORDING
 
+        self.recording_starting.emit()
         self._resolve_active_context()
 
         # Play crisp start chime BEFORE opening microphone stream to prevent acoustic bleed
         play_start_cue(self.config.sound_effects, wait=True)
 
-        try:
-            self.recorder.start()
-        except Exception as exc:
-            logger.exception("Failed to start microphone recording")
+        with self._recorder_lock:
             with self._state_lock:
-                self._state = AppState.ERROR
-            play_error_cue(self.config.sound_effects)
-            msg = self.i18n.t("status_mic_error", err=exc)
-            self.error_occurred.emit(msg)
-            self.state_changed.emit(AppState.ERROR.value, msg)
-            return
+                if self._session_gen != my_gen or self._state != AppState.RECORDING:
+                    return
+
+            try:
+                self.recorder.start()
+            except Exception as exc:
+                logger.exception("Failed to start microphone recording")
+                with self._state_lock:
+                    if self._session_gen != my_gen:
+                        return
+                    self._state = AppState.ERROR
+                play_error_cue(self.config.sound_effects)
+                msg = self.i18n.t("status_mic_error", err=exc)
+                self.error_occurred.emit(msg)
+                self.state_changed.emit(AppState.ERROR.value, msg)
+                return
+
+            with self._state_lock:
+                aborted = self._session_gen != my_gen or self._state != AppState.RECORDING
+
+            if aborted:
+                try:
+                    self.recorder.cancel()
+                except Exception:
+                    pass
+                return
 
         self._start_meter_timer()
         self.state_changed.emit(AppState.RECORDING.value, self.i18n.t("status_listening"))
@@ -329,22 +385,34 @@ class DictationController(QObject):
         with self._state_lock:
             if self._state != AppState.RECORDING:
                 return
+            self._session_gen += 1
+            stop_gen = self._session_gen
             self._state = AppState.TRANSCRIBING
 
         self._stop_meter_timer()
-        audio, duration = self.recorder.stop()
+        with self._recorder_lock:
+            if isinstance(self.recorder, AudioRecorder):
+                audio, duration = self.recorder.stop(resample=False)
+                capture_sr = self.recorder.capture_sample_rate
+            else:
+                audio, duration = self.recorder.stop()
+                raw_sr = getattr(self.recorder, "capture_sample_rate", SAMPLE_RATE)
+                capture_sr = raw_sr if isinstance(raw_sr, int) and raw_sr > 0 else SAMPLE_RATE
+
         play_stop_cue(self.config.sound_effects)
 
         if duration < 0.2 or audio.size == 0:
             with self._state_lock:
-                self._state = AppState.IDLE
+                if self._session_gen == stop_gen:
+                    self._state = AppState.IDLE
             self.state_changed.emit(AppState.IDLE.value, self.i18n.t("status_too_short"))
+            self._maybe_trigger_pending_reload()
             return
 
         self.state_changed.emit(AppState.TRANSCRIBING.value, self.i18n.t("status_transcribing"))
         threading.Thread(
             target=self._transcribe_worker,
-            args=(audio, self._active_target_app, self._active_mode, True),
+            args=(audio, self._active_target_app, self._active_mode, True, capture_sr),
             daemon=True,
         ).start()
 
@@ -353,12 +421,15 @@ class DictationController(QObject):
         with self._state_lock:
             if self._state != AppState.RECORDING:
                 return
+            self._session_gen += 1
             self._state = AppState.IDLE
 
         self._stop_meter_timer()
-        self.recorder.cancel()
+        with self._recorder_lock:
+            self.recorder.cancel()
         play_stop_cue(self.config.sound_effects)
         self.state_changed.emit(AppState.IDLE.value, self.i18n.t("status_cancelled"))
+        self._maybe_trigger_pending_reload()
 
     def transcribe_audio_file(self, file_path: Path | str) -> None:
         """Transcribe a dropped offline audio file (.wav/.mp3/.m4a/.flac/.ogg) asynchronously."""
@@ -399,14 +470,26 @@ class DictationController(QObject):
         target_app: str = "",
         mode: str = "cleanup",
         allow_paste: bool = True,
+        sample_rate: int = SAMPLE_RATE,
     ) -> None:
+        cfg = replace(
+            self.config,
+            custom_vocabulary=list(self.config.custom_vocabulary),
+            replacements=dict(self.config.replacements),
+            snippets=dict(self.config.snippets),
+            app_mode_rules=dict(self.config.app_mode_rules),
+            custom_mode_prompts=dict(self.config.custom_mode_prompts),
+        )
         try:
-            initial_prompt = self.config.build_initial_prompt()
-            use_translate = mode == "translate_en" or self.config.translate_to_english
+            if sample_rate != SAMPLE_RATE:
+                audio = resample_audio(audio, sample_rate, SAMPLE_RATE)
+
+            initial_prompt = cfg.build_initial_prompt()
+            use_translate = mode == "translate_en" or cfg.translate_to_english
             task = "translate" if use_translate else "transcribe"
 
             transcribe_kwargs = {
-                "language": self.config.language,
+                "language": cfg.language,
                 "initial_prompt": initial_prompt,
             }
             if task == "translate":
@@ -418,24 +501,34 @@ class DictationController(QObject):
                 with self._state_lock:
                     self._state = AppState.IDLE
                 self.state_changed.emit(AppState.IDLE.value, self.i18n.t("status_no_speech"))
+                self._maybe_trigger_pending_reload()
                 return
 
-            if self.config.ollama_enabled:
+            if cfg.ollama_enabled:
                 with self._state_lock:
                     self._state = AppState.REFINING
                 self.state_changed.emit(AppState.REFINING.value, self.i18n.t("status_refining"))
 
-            processed = self.postprocessor.process(
-                result.text,
-                mode=mode,
-                detected_language=result.language,
-            )
+            if isinstance(self.postprocessor, TextPostProcessor):
+                processed = self.postprocessor.process(
+                    result.text,
+                    mode=mode,
+                    detected_language=result.language,
+                    config=cfg,
+                )
+            else:
+                processed = self.postprocessor.process(
+                    result.text,
+                    mode=mode,
+                    detected_language=result.language,
+                )
             final_text = processed.final_text
 
             if not final_text.strip():
                 with self._state_lock:
                     self._state = AppState.IDLE
                 self.state_changed.emit(AppState.IDLE.value, self.i18n.t("status_no_speech"))
+                self._maybe_trigger_pending_reload()
                 return
 
             self.last_raw_text = result.text.strip()
@@ -443,7 +536,7 @@ class DictationController(QObject):
 
             t_paste = time.perf_counter()
             pasted = False
-            if allow_paste and self.config.auto_paste:
+            if allow_paste and cfg.auto_paste:
                 if target_app:
                     pasted = bool(self.injector.inject(final_text, target_app=target_app))
                 else:
@@ -452,13 +545,13 @@ class DictationController(QObject):
                 self.injector.copy_only(final_text)
             paste_sec = time.perf_counter() - t_paste
 
-            if self.config.save_history and self.history is not None:
+            if cfg.save_history and self.history is not None:
                 try:
                     self.history.add(
                         raw_text=result.text,
                         final_text=self.last_text,
                         language=result.language,
-                        model_size=self.config.model_size,
+                        model_size=cfg.model_size,
                         audio_duration_sec=result.duration_sec,
                         inference_sec=result.inference_sec,
                         used_llm=processed.used_llm,
@@ -477,7 +570,7 @@ class DictationController(QObject):
             outcome = DictationOutcome(
                 raw_text=self.last_raw_text,
                 final_text=self.last_text,
-                language=result.language or self.config.language,
+                language=result.language or cfg.language,
                 mode=mode,
                 target_app=target_app,
                 audio_duration_sec=result.duration_sec,
@@ -502,11 +595,12 @@ class DictationController(QObject):
                 AppState.IDLE.value,
                 self.i18n.t(status_key, sec=result.inference_sec, suffix=suffix),
             )
+            self._maybe_trigger_pending_reload()
         except Exception as exc:
             logger.exception("Transcription failed")
             with self._state_lock:
                 self._state = AppState.ERROR
-            play_error_cue(self.config.sound_effects)
+            play_error_cue(cfg.sound_effects)
             msg = self.i18n.t("status_transcribe_error", err=exc)
             self.error_occurred.emit(msg)
             self.state_changed.emit(AppState.ERROR.value, msg)
@@ -548,6 +642,7 @@ class DictationController(QObject):
             vad_filter=new_config.vad_filter,
             beam_size=new_config.beam_size,
             performance_profile=new_config.performance_profile,
+            offline_only=new_config.offline_only,
         )
         if needs_reload:
             self.preload_model()
